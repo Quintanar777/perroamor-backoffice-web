@@ -432,10 +432,10 @@ src/
    - Si no hay → `<EmptyState>` con CTA "Crear Evento".
 
 **Done cuando**:
-- [ ] CRUD de events anda.
-- [ ] Badges visuales coinciden con el estado calculado del backend.
-- [ ] Dashboard muestra el evento actual cuando existe.
-- [ ] Commit: `feat(events): event management ui with status badges`.
+- [x] CRUD de events anda.
+- [x] Badges visuales coinciden con el estado calculado del backend.
+- [x] Dashboard muestra el evento actual cuando existe.
+- [x] Commit: `feat(events): event management ui with status badges`.
 
 ---
 
@@ -734,7 +734,7 @@ Cuando todas estas estén ✅, el frontend MVP está terminado:
 - [x] Fase 1: cross-cutting _(commit `9ce62bd` — `/combos` agregado en Fase 3)_
 - [x] Fase 2: auth _(commit `85a73fb`)_
 - [x] Fase 3: catálogo _(brands, products, variants y combos)_
-- [ ] Fase 4: events
+- [x] Fase 4: events
 - [ ] Fase 5: POS
 - [ ] Fase 6: sales list & stats
 - [ ] Fase 7: hardening

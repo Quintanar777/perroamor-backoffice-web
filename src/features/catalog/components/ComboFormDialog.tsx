@@ -156,7 +156,7 @@ export function ComboFormDialog({ open, onOpenChange, combo }: Props) {
         <DialogHeader className="border-b px-6 py-4">
           <DialogTitle>{isEdit ? 'Editar combo' : 'Nuevo combo'}</DialogTitle>
           <DialogDescription>
-            Definí los componentes; el stock disponible lo calcula el backend.
+            Define los componentes; el stock disponible lo calcula el backend.
           </DialogDescription>
         </DialogHeader>
 
@@ -195,7 +195,7 @@ export function ComboFormDialog({ open, onOpenChange, combo }: Props) {
                         >
                           <FormControl>
                             <SelectTrigger>
-                              <SelectValue placeholder="Elegí una marca" />
+                              <SelectValue placeholder="Elige una marca" />
                             </SelectTrigger>
                           </FormControl>
                           <SelectContent>

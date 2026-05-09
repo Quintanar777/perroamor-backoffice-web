@@ -60,7 +60,7 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <div className="text-5xl">🐕</div>
           <CardTitle>Perro Amor Backoffice</CardTitle>
-          <CardDescription>Ingresá con tu usuario y contraseña.</CardDescription>
+          <CardDescription>Ingresa con tu usuario y contraseña.</CardDescription>
         </CardHeader>
         <Form {...form}>
           <form onSubmit={handleSubmit}>

@@ -77,7 +77,7 @@ export function ComboItemRow({
               disabled={disabled || productsLoading}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="Elegí un producto" />
+                <SelectValue placeholder="Elige un producto" />
               </SelectTrigger>
               <SelectContent>
                 {products.map((p) => (

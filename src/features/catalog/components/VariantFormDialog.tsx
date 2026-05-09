@@ -269,7 +269,7 @@ export function VariantFormDialog({ open, onOpenChange, productId, variant }: Pr
                       />
                     </FormControl>
                     <FormDescription>
-                      Suma o resta sobre el precio base. Usá negativo para descuento.
+                      Suma o resta sobre el precio base. Usa negativo para descuento.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

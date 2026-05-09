@@ -145,7 +145,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
           <DialogDescription>
             {isEdit
               ? 'Actualizá los datos del producto.'
-              : 'Agregá un producto al catálogo.'}
+              : 'Agrega un producto al catálogo.'}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>
@@ -178,7 +178,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
                     >
                       <FormControl>
                         <SelectTrigger>
-                          <SelectValue placeholder="Elegí una marca" />
+                          <SelectValue placeholder="Elige una marca" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>

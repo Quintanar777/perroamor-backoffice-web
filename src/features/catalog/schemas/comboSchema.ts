@@ -36,7 +36,7 @@ export const comboSchema = z.object({
   isActive: z.boolean().optional(),
   items: z
     .array(comboItemSchema)
-    .min(1, 'Agregá al menos un componente'),
+    .min(1, 'Agrega al menos un componente'),
 })
 
 export type ComboItemFormInput = z.infer<typeof comboItemSchema>

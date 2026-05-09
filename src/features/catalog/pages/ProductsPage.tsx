@@ -252,7 +252,7 @@ export default function ProductsPage() {
         <EmptyState
           icon={<span className="text-4xl">📦</span>}
           title="Aún no hay productos"
-          description="Empezá creando el primero o cargá una marca antes."
+          description="Empieza creando el primero o crea una marca antes."
           action={
             <Button onClick={() => setCreating(true)}>
               <Plus className="size-4" />

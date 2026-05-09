@@ -197,7 +197,7 @@ function VariantsPageInner({ productId }: { productId: number }) {
         <EmptyState
           icon={<span className="text-4xl">🎨</span>}
           title="Este producto no tiene variantes"
-          description="Agregá la primera con color, talla, diseño o SKU específico."
+          description="Agrega la primera con color, talla, diseño o SKU específico."
           action={
             <Button onClick={() => setCreating(true)}>
               <Plus className="size-4" />

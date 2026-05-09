@@ -19,7 +19,7 @@ export default function NotFoundPage() {
           <CardDescription>La ruta no existe o se mudó.</CardDescription>
         </CardHeader>
         <CardContent className="text-muted-foreground text-center text-sm">
-          Volvé al dashboard y seguí desde ahí.
+          Vuelve al dashboard y sigue desde ahí.
         </CardContent>
         <CardFooter className="flex justify-center">
           <Button asChild size="lg">
