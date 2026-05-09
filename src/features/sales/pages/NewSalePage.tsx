@@ -316,9 +316,16 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
             onValueChange={(v) => setCartTab(v as 'items' | 'payment')}
             className="flex min-h-0 flex-1 flex-col gap-0"
           >
-            <TabsList className="mx-6 mt-3 grid h-10 w-auto grid-cols-2">
-              <TabsTrigger value="items">Items</TabsTrigger>
-              <TabsTrigger value="payment">Pago</TabsTrigger>
+            <TabsList
+              variant="line"
+              className="mx-6 mt-2 grid h-11 w-auto grid-cols-2 border-b"
+            >
+              <TabsTrigger value="items" className="text-base">
+                Items
+              </TabsTrigger>
+              <TabsTrigger value="payment" className="text-base">
+                Pago
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent
