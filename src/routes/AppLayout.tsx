@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { NavLink, Outlet } from 'react-router-dom'
 import {
   Boxes,
   CalendarDays,
@@ -31,6 +31,7 @@ import {
 } from '@/components/ui/sheet'
 import { Separator } from '@/components/ui/separator'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
+import { useLogout } from '@/features/auth/hooks/useLogout'
 import { useAuthStore } from '@/lib/auth/store'
 import { cn } from '@/lib/utils'
 
@@ -124,13 +125,11 @@ function UserBadge({ collapsedLabel = false }: { collapsedLabel?: boolean }) {
 
 export function AppLayout() {
   const [mobileOpen, setMobileOpen] = useState(false)
-  const navigate = useNavigate()
-  const clear = useAuthStore((s) => s.clear)
+  const logout = useLogout()
   const user = useAuthStore((s) => s.user)
 
   const handleLogout = () => {
-    clear()
-    navigate('/login', { replace: true })
+    logout.mutate()
   }
 
   const desktopSidebar = (

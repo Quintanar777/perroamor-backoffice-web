@@ -2,6 +2,7 @@ import { QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { RouterProvider } from 'react-router-dom'
 import { Toaster } from '@/components/ui/sonner'
+import { AuthGate } from '@/components/shared/AuthGate'
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { ThemeProvider } from '@/components/shared/ThemeProvider'
 import { env } from '@/lib/env'
@@ -13,7 +14,9 @@ function App() {
     <ErrorBoundary>
       <ThemeProvider>
         <QueryClientProvider client={queryClient}>
-          <RouterProvider router={router} />
+          <AuthGate>
+            <RouterProvider router={router} />
+          </AuthGate>
           <Toaster richColors position="top-right" />
           {env.isDev && <ReactQueryDevtools initialIsOpen={false} />}
         </QueryClientProvider>

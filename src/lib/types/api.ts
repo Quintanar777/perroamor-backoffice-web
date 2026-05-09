@@ -1,10 +1,15 @@
+export interface FieldError {
+  field: string
+  message: string
+}
+
 export interface ProblemDetail {
   type?: string
   title?: string
   status?: number
   detail?: string
   instance?: string
-  errors?: Record<string, string[]>
+  errors?: FieldError[]
   [key: string]: unknown
 }
 
@@ -12,14 +17,14 @@ export class ApiError extends Error {
   status: number
   title: string
   detail?: string
-  errors?: Record<string, string[]>
+  errors?: FieldError[]
   raw?: ProblemDetail
 
   constructor(args: {
     status: number
     title: string
     detail?: string
-    errors?: Record<string, string[]>
+    errors?: FieldError[]
     raw?: ProblemDetail
   }) {
     super(args.detail ?? args.title)

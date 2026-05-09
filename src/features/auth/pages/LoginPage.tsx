@@ -1,4 +1,8 @@
-import { useNavigate } from 'react-router-dom'
+import { useEffect } from 'react'
+import { Loader2 } from 'lucide-react'
+import { useForm } from 'react-hook-form'
+import { Navigate } from 'react-router-dom'
+import { zodResolver } from '@hookform/resolvers/zod'
 import { Button } from '@/components/ui/button'
 import {
   Card,
@@ -8,26 +12,47 @@ import {
   CardHeader,
   CardTitle,
 } from '@/components/ui/card'
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/components/ui/form'
+import { Input } from '@/components/ui/input'
+import { useLogin } from '@/features/auth/hooks/useLogin'
+import { loginSchema, type LoginInput } from '@/features/auth/schemas/loginSchema'
 import { useAuthStore } from '@/lib/auth/store'
+import { ApiError } from '@/lib/types/api'
+
+type LoginField = keyof LoginInput
 
 export default function LoginPage() {
-  const setAuth = useAuthStore((s) => s.setAuth)
-  const navigate = useNavigate()
+  const user = useAuthStore((s) => s.user)
+  const login = useLogin()
+  const form = useForm<LoginInput>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { username: '', password: '' },
+  })
 
-  const handleMockLogin = () => {
-    setAuth({
-      accessToken: 'dev-mock-access-token',
-      refreshToken: 'dev-mock-refresh-token',
-      user: {
-        id: 0,
-        username: 'demo',
-        fullName: 'Demo Erick',
-        role: 'ADMIN',
-        isActive: true,
-      },
-    })
-    navigate('/', { replace: true })
-  }
+  useEffect(() => {
+    if (login.error instanceof ApiError && login.error.errors) {
+      for (const fieldError of login.error.errors) {
+        if (fieldError.field === 'username' || fieldError.field === 'password') {
+          form.setError(fieldError.field as LoginField, {
+            message: fieldError.message,
+          })
+        }
+      }
+    }
+  }, [login.error, form])
+
+  if (user) return <Navigate to="/" replace />
+
+  const handleSubmit = form.handleSubmit((values) => {
+    login.mutate(values)
+  })
 
   return (
     <main className="bg-background flex min-h-[100dvh] items-center justify-center p-6">
@@ -35,16 +60,63 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <div className="text-5xl">🐕</div>
           <CardTitle>Perro Amor Backoffice</CardTitle>
-          <CardDescription>El login real llega en Fase 2.</CardDescription>
+          <CardDescription>Ingresá con tu usuario y contraseña.</CardDescription>
         </CardHeader>
-        <CardContent className="text-muted-foreground text-center text-sm">
-          Por ahora podés entrar con un usuario fake para validar el layout y la nav.
-        </CardContent>
-        <CardFooter className="flex justify-center">
-          <Button size="lg" onClick={handleMockLogin}>
-            Entrar como Demo
-          </Button>
-        </CardFooter>
+        <Form {...form}>
+          <form onSubmit={handleSubmit}>
+            <CardContent className="space-y-4">
+              <FormField
+                control={form.control}
+                name="username"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Usuario</FormLabel>
+                    <FormControl>
+                      <Input
+                        autoComplete="username"
+                        autoCapitalize="none"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        disabled={login.isPending}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Contraseña</FormLabel>
+                    <FormControl>
+                      <Input
+                        type="password"
+                        autoComplete="current-password"
+                        disabled={login.isPending}
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+            <CardFooter>
+              <Button
+                type="submit"
+                size="lg"
+                className="w-full"
+                disabled={login.isPending}
+              >
+                {login.isPending && <Loader2 className="size-4 animate-spin" />}
+                Ingresar
+              </Button>
+            </CardFooter>
+          </form>
+        </Form>
       </Card>
     </main>
   )

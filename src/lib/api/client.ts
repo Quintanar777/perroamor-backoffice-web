@@ -1,14 +1,12 @@
 import { env } from '@/lib/env'
 import { useAuthStore } from '@/lib/auth/store'
 import { tokenStorage } from '@/lib/auth/tokens'
-import { ApiError, type ProblemDetail } from '@/lib/types/api'
+import { ApiError, type FieldError, type ProblemDetail } from '@/lib/types/api'
 import type { AuthResponse } from '@/lib/types/user'
-
-type Json = Record<string, unknown> | unknown[] | null
 
 interface RequestOptions {
   query?: Record<string, string | number | boolean | undefined | null>
-  body?: Json
+  body?: unknown
   signal?: AbortSignal
   headers?: Record<string, string>
   skipAuth?: boolean
@@ -32,7 +30,7 @@ const parseProblem = async (response: Response): Promise<ApiError> => {
   let raw: ProblemDetail | undefined
   let title = response.statusText || 'Request failed'
   let detail: string | undefined
-  let errors: Record<string, string[]> | undefined
+  let errors: FieldError[] | undefined
 
   try {
     const ct = response.headers.get('content-type') ?? ''
@@ -140,19 +138,19 @@ export const apiGet = <T>(path: string, options?: RequestOptions): Promise<T> =>
 
 export const apiPost = <T>(
   path: string,
-  body?: Json,
+  body?: unknown,
   options?: RequestOptions,
 ): Promise<T> => request<T>('POST', path, { ...options, body })
 
 export const apiPut = <T>(
   path: string,
-  body?: Json,
+  body?: unknown,
   options?: RequestOptions,
 ): Promise<T> => request<T>('PUT', path, { ...options, body })
 
 export const apiPatch = <T>(
   path: string,
-  body?: Json,
+  body?: unknown,
   options?: RequestOptions,
 ): Promise<T> => request<T>('PATCH', path, { ...options, body })
 
