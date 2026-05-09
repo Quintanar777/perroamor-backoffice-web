@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { ArrowLeft, Pencil, Plus, Trash2 } from 'lucide-react'
 import { Link, Navigate, useParams } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
+import { BrandBadge } from '@/components/shared/BrandBadge'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Skeleton } from '@/components/ui/skeleton'
@@ -179,7 +180,7 @@ function VariantsPageInner({ productId }: { productId: number }) {
         <Card>
           <CardHeader>
             <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-              <Badge variant="outline">{product.brandName}</Badge>
+              <BrandBadge name={product.brandName} color={product.brandColor} />
               <span>{product.category}</span>
               <span className="text-muted-foreground">·</span>
               <span>Precio base {formatMoney(product.price)}</span>

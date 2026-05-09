@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Loader2, Minus, Plus } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
+import { BrandBadge } from '@/components/shared/BrandBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -116,7 +116,7 @@ function ConfigBody({
       <SheetHeader className="border-b px-6 py-4">
         <SheetTitle>{product.name}</SheetTitle>
         <SheetDescription className="flex flex-wrap items-center gap-2">
-          <Badge variant="outline">{product.brandName}</Badge>
+          <BrandBadge name={product.brandName} color={product.brandColor} />
           <span>{product.category}</span>
           <span>·</span>
           <span className="font-medium">{formatMoney(product.price)}</span>

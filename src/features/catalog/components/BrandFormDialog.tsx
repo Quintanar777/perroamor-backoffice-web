@@ -36,7 +36,7 @@ interface Props {
   brand: Brand | null
 }
 
-const KNOWN_FIELDS = ['name', 'description', 'isActive'] as const
+const KNOWN_FIELDS = ['name', 'description', 'baseColor', 'isActive'] as const
 
 export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
   const isEdit = brand !== null
@@ -46,7 +46,7 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
 
   const form = useForm<BrandFormInput>({
     resolver: zodResolver(brandSchema),
-    defaultValues: { name: '', description: '', isActive: true },
+    defaultValues: { name: '', description: '', baseColor: '', isActive: true },
   })
 
   useEffect(() => {
@@ -56,18 +56,21 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
         ? {
             name: brand.name,
             description: brand.description ?? '',
+            baseColor: brand.baseColor ?? '',
             isActive: brand.isActive,
           }
-        : { name: '', description: '', isActive: true },
+        : { name: '', description: '', baseColor: '', isActive: true },
     )
     // intentional: same defaults shape; reset triggered by `open` toggle
   }, [brand, open, form])
 
   const onSubmit = form.handleSubmit(async (values) => {
     const description = values.description.trim()
+    const baseColor = (values.baseColor ?? '').trim()
     const body = {
       name: values.name.trim(),
       description: description.length > 0 ? description : null,
+      baseColor: baseColor.length > 0 ? baseColor : null,
       isActive: values.isActive,
     }
     try {
@@ -124,6 +127,47 @@ export function BrandFormDialog({ open, onOpenChange, brand }: Props) {
                       {...field}
                     />
                   </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+            <FormField
+              control={form.control}
+              name="baseColor"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Color base (opcional)</FormLabel>
+                  <div className="flex items-center gap-2">
+                    <FormControl>
+                      <Input
+                        type="color"
+                        disabled={pending}
+                        value={field.value || '#000000'}
+                        onChange={(e) => field.onChange(e.target.value)}
+                        className="h-10 w-16 cursor-pointer p-1"
+                        aria-label="Selector de color"
+                      />
+                    </FormControl>
+                    <Input
+                      type="text"
+                      disabled={pending}
+                      placeholder="#RRGGBB"
+                      value={field.value ?? ''}
+                      onChange={(e) => field.onChange(e.target.value)}
+                      className="flex-1"
+                    />
+                    {field.value && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        disabled={pending}
+                        onClick={() => field.onChange('')}
+                      >
+                        Quitar
+                      </Button>
+                    )}
+                  </div>
                   <FormMessage />
                 </FormItem>
               )}

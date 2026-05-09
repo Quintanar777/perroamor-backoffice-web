@@ -42,6 +42,26 @@ export default function BrandsPage() {
       cell: (b) => <span className="font-medium">{b.name}</span>,
     },
     {
+      key: 'color',
+      header: 'Color',
+      headerClassName: 'w-32',
+      cell: (b) =>
+        b.baseColor ? (
+          <span className="flex items-center gap-2">
+            <span
+              aria-hidden
+              className="size-4 rounded-sm border"
+              style={{ backgroundColor: b.baseColor }}
+            />
+            <span className="text-muted-foreground tabular-nums text-xs">
+              {b.baseColor.toUpperCase()}
+            </span>
+          </span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
       key: 'description',
       header: 'Descripción',
       cell: (b) => (

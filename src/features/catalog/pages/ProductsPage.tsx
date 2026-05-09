@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Layers, Pencil, Plus, Search, Trash2 } from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { Badge } from '@/components/ui/badge'
+import { BrandBadge } from '@/components/shared/BrandBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -99,7 +100,7 @@ export default function ProductsPage() {
       key: 'brand',
       header: 'Marca',
       headerClassName: 'w-32',
-      cell: (p) => <Badge variant="outline">{p.brandName}</Badge>,
+      cell: (p) => <BrandBadge name={p.brandName} color={p.brandColor} />,
     },
     {
       key: 'category',

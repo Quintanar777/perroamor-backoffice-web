@@ -2,6 +2,7 @@ export interface Brand {
   id: number
   name: string
   description: string | null
+  baseColor: string | null
   isActive: boolean
   createdAt: string
 }
@@ -9,6 +10,7 @@ export interface Brand {
 export interface BrandInput {
   name: string
   description?: string | null
+  baseColor?: string | null
   isActive?: boolean
 }
 
@@ -17,6 +19,7 @@ export interface Product {
   name: string
   brandId: number
   brandName: string
+  brandColor: string | null
   category: string
   price: number
   wholesalePrice: number
@@ -92,6 +95,7 @@ export interface Combo {
   description: string | null
   brandId: number
   brandName: string
+  brandColor: string | null
   price: number
   wholesalePrice: number
   isActive: boolean

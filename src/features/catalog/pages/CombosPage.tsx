@@ -8,6 +8,7 @@ import {
   Trash2,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { BrandBadge } from '@/components/shared/BrandBadge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -281,7 +282,7 @@ export default function CombosPage() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <Badge variant="outline">{c.brandName}</Badge>
+                            <BrandBadge name={c.brandName} color={c.brandColor} />
                           </TableCell>
                           <TableCell className="text-right">
                             <Money value={c.price} />
