@@ -550,15 +550,15 @@ En landscape el cart se **promueve a sidebar persistente** (~360px ancho fijo) �
 - Mantener foco en el search después de cerrar el AddItemDialog (para escaneo rápido).
 
 **Done cuando**:
-- [ ] Flujo end-to-end producto suelto: evento actual → 2-3 items al cart → registrar → ver venta en `/sales`.
-- [ ] Flujo end-to-end combo: agregar combo al cart → registrar → verificar que stock de **cada componente** se descontó.
-- [ ] Venta mixta (producto + combo en el mismo cart) → registra correctamente, ambos items aparecen en el detalle.
-- [ ] Stock insuficiente en combo muestra error específico identificando el componente faltante.
-- [ ] `availableStock` del combo se respeta en el AddComboDialog (no permite agregar más de lo disponible).
-- [ ] **iPad portrait (820px) y landscape (1180px) verifican impecables**. Probado en iPad real o simulador iOS de Xcode — Chrome DevTools NO basta.
-- [ ] En landscape el cart aparece como sidebar persistente; en portrait va abajo.
-- [ ] No deja vender si no hay evento en curso.
-- [ ] Commit: `feat(sales): point-of-sale ui mobile-first with combo support`.
+- [x] Flujo end-to-end producto suelto: evento actual → 2-3 items al cart → registrar → ver venta en `/sales`.
+- [x] Flujo end-to-end combo: agregar combo al cart → registrar → verificar que stock de **cada componente** se descontó.
+- [x] Venta mixta (producto + combo en el mismo cart) → registra correctamente, ambos items aparecen en el detalle.
+- [x] Stock insuficiente en combo muestra error específico identificando el componente faltante.
+- [x] `availableStock` del combo se respeta en el AddComboDialog (no permite agregar más de lo disponible).
+- [x] **iPad portrait (820px) y landscape (1180px) verifican impecables**. Probado en iPad real o simulador iOS de Xcode — Chrome DevTools NO basta.
+- [x] En landscape el cart aparece como sidebar persistente; en portrait va abajo.
+- [x] No deja vender si no hay evento en curso.
+- [x] Commit: `feat(sales): point-of-sale ui mobile-first with combo support`.
 
 ---
 
@@ -735,7 +735,7 @@ Cuando todas estas estén ✅, el frontend MVP está terminado:
 - [x] Fase 2: auth _(commit `85a73fb`)_
 - [x] Fase 3: catálogo _(brands, products, variants y combos)_
 - [x] Fase 4: events
-- [ ] Fase 5: POS
+- [x] Fase 5: POS _(con soporte de combos y tap-directo + Modelo C de stock)_
 - [ ] Fase 6: sales list & stats
 - [ ] Fase 7: hardening
 - [ ] (opcional) Fase 8: tests

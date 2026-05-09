@@ -28,6 +28,18 @@ export function useComboQuery(id: number) {
   })
 }
 
+export function useAllCombosQuery() {
+  return useQuery({
+    queryKey: ['catalog', 'all-combos'] as const,
+    queryFn: async () => {
+      // Backend caps page size at 200. Suficiente para POS de un evento.
+      const page = await combosApi.list({ page: 0, size: 200, isActive: true })
+      return page.content
+    },
+    staleTime: 30_000,
+  })
+}
+
 const invalidateCombos = (qc: ReturnType<typeof useQueryClient>) => {
   qc.invalidateQueries({ queryKey: ['catalog', 'combos'] })
 }
