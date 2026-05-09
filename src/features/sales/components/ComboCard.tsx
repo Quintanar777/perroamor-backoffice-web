@@ -7,6 +7,7 @@ import { cn } from '@/lib/utils'
 
 interface Props {
   combo: Combo
+  quantityInCart: number
   onSelect: (combo: Combo) => void
 }
 
@@ -16,9 +17,10 @@ function stockTone(stock: number): string {
   return 'text-emerald-600 dark:text-emerald-400'
 }
 
-export function ComboCard({ combo, onSelect }: Props) {
+export function ComboCard({ combo, quantityInCart, onSelect }: Props) {
   const isOut = combo.availableStock <= 0
   const disabled = isOut
+  const hasInCart = quantityInCart > 0
 
   return (
     <Card
@@ -36,6 +38,7 @@ export function ComboCard({ combo, onSelect }: Props) {
       className={cn(
         'group relative flex aspect-square cursor-pointer flex-col justify-between gap-2 border-dashed p-3 transition-colors',
         'hover:border-primary/50 hover:bg-accent/40 focus-visible:ring-ring focus-visible:ring-2',
+        hasInCart && 'border-primary border-solid ring-2 ring-primary/30',
         disabled && 'pointer-events-none cursor-not-allowed opacity-40',
       )}
     >
@@ -44,16 +47,25 @@ export function ComboCard({ combo, onSelect }: Props) {
           <Layers className="size-3" />
           Combo
         </Badge>
-        <span className={cn('text-xs tabular-nums', stockTone(combo.availableStock))}>
-          {combo.availableStock}
-        </span>
+        {hasInCart ? (
+          <span
+            aria-label={`En carrito: ${quantityInCart}`}
+            className="bg-primary text-primary-foreground flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-sm font-bold tabular-nums"
+          >
+            {quantityInCart}
+          </span>
+        ) : (
+          <span className={cn('text-xs tabular-nums', stockTone(combo.availableStock))}>
+            {combo.availableStock}
+          </span>
+        )}
       </div>
 
       <div className="flex flex-col gap-1">
-        <p className="line-clamp-2 text-base leading-tight font-semibold">
+        <p className="line-clamp-2 text-center text-xl leading-tight font-semibold">
           {combo.name}
         </p>
-        <p className="text-muted-foreground text-xs">
+        <p className="text-muted-foreground text-center text-xs">
           {combo.brandName} · {combo.items.length} ítems
         </p>
       </div>

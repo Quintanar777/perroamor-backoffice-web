@@ -1,6 +1,8 @@
+import { useEffect, useState } from 'react'
 import { Minus, Plus, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import {
   itemKey,
@@ -11,12 +13,33 @@ import { formatMoney } from '@/lib/format'
 
 function ItemRow({ item }: { item: CartItem }) {
   const updateQty = useCartStore((s) => s.updateQty)
+  const updateUnitPrice = useCartStore((s) => s.updateUnitPrice)
   const removeItem = useCartStore((s) => s.removeItem)
   const key = itemKey(item)
   const lineTotal = item.unitPrice * item.quantity
 
   const isCombo = item.kind === 'combo'
   const title = isCombo ? item.comboName : item.productName
+
+  const [priceDraft, setPriceDraft] = useState(item.unitPrice.toString())
+
+  useEffect(() => {
+    setPriceDraft(item.unitPrice.toString())
+  }, [item.unitPrice])
+
+  const commitPrice = () => {
+    const trimmed = priceDraft.trim()
+    if (trimmed === '') {
+      setPriceDraft(item.unitPrice.toString())
+      return
+    }
+    const next = Number(trimmed)
+    if (!Number.isFinite(next) || next < 0) {
+      setPriceDraft(item.unitPrice.toString())
+      return
+    }
+    updateUnitPrice(key, next)
+  }
 
   return (
     <div className="flex flex-col gap-2 py-3">
@@ -38,9 +61,6 @@ function ItemRow({ item }: { item: CartItem }) {
               "{item.personalization}"
             </p>
           )}
-          <p className="text-muted-foreground text-xs tabular-nums">
-            {formatMoney(item.unitPrice)} c/u
-          </p>
         </div>
         <Button
           variant="ghost"
@@ -79,6 +99,30 @@ function ItemRow({ item }: { item: CartItem }) {
             <Plus className="size-4" />
           </Button>
         </div>
+        <div className="flex items-center gap-1.5">
+          <span className="text-muted-foreground text-xs">$</span>
+          <Input
+            type="number"
+            inputMode="decimal"
+            step="1"
+            min="0"
+            aria-label={`Precio unitario de ${title}`}
+            value={priceDraft}
+            onChange={(e) => setPriceDraft(e.target.value)}
+            onBlur={commitPrice}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                commitPrice()
+                ;(e.target as HTMLInputElement).blur()
+              }
+            }}
+            className="h-9 w-24 text-right text-sm tabular-nums"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end">
         <span className="text-base font-semibold tabular-nums">
           {formatMoney(lineTotal)}
         </span>

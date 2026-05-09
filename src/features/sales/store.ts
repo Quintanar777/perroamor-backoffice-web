@@ -42,6 +42,7 @@ interface CartState {
 interface CartActions {
   addItem: (item: CartItem) => void
   updateQty: (key: string, qty: number) => void
+  updateUnitPrice: (key: string, price: number) => void
   removeItem: (key: string) => void
   clear: () => void
 }
@@ -87,6 +88,18 @@ export const useCartStore = create<CartState & CartActions>((set) => ({
           : it,
       ),
     })),
+  updateUnitPrice: (key, price) =>
+    set((state) => ({
+      items: state.items.map((it) =>
+        itemKey(it) === key
+          ? ({
+              ...it,
+              unitPrice:
+                Number.isFinite(price) && price >= 0 ? price : it.unitPrice,
+            } as CartItem)
+          : it,
+      ),
+    })),
   removeItem: (key) =>
     set((state) => ({
       items: state.items.filter((it) => itemKey(it) !== key),
@@ -99,3 +112,23 @@ export const selectCartTotal = (state: CartState): number =>
 
 export const selectCartCount = (state: CartState): number =>
   state.items.reduce((acc, it) => acc + it.quantity, 0)
+
+export const selectQuantityForProduct =
+  (productId: number) =>
+  (state: CartState): number =>
+    state.items.reduce(
+      (acc, it) =>
+        it.kind === 'product' && it.productId === productId
+          ? acc + it.quantity
+          : acc,
+      0,
+    )
+
+export const selectQuantityForCombo =
+  (comboId: number) =>
+  (state: CartState): number =>
+    state.items.reduce(
+      (acc, it) =>
+        it.kind === 'combo' && it.comboId === comboId ? acc + it.quantity : acc,
+      0,
+    )

@@ -39,6 +39,7 @@ export interface SaleItemInput {
   variantId?: number | null
   comboId?: number
   quantity: number
+  unitPrice?: number
   personalization?: string | null
 }
 
@@ -49,6 +50,7 @@ export interface SaleInput {
   customerPhone?: string | null
   customerEmail?: string | null
   notes?: string | null
+  discountAmount?: number
   items: SaleItemInput[]
 }
 
