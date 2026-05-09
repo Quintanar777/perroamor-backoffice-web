@@ -206,16 +206,20 @@ function ItemDescription({ item }: { item: SaleItem }) {
         <Badge variant="secondary" className="text-[10px]">
           Combo
         </Badge>
-        <span className="font-medium">{item.comboName}</span>
+        <span className="font-medium">
+          {item.comboName ?? `Combo #${item.comboId}`}
+        </span>
       </div>
     )
   }
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="font-medium">Producto #{item.productId}</span>
+      <span className="font-medium">
+        {item.productName ?? `Producto #${item.productId}`}
+      </span>
       {item.variantId && (
         <span className="text-muted-foreground text-xs">
-          Variante #{item.variantId}
+          {item.variantName ?? `Variante #${item.variantId}`}
         </span>
       )}
       {item.personalization && (
