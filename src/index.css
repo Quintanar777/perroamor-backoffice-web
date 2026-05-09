@@ -121,13 +121,27 @@
   * {
     @apply border-border outline-ring/50;
     }
+  html {
+    @apply font-sans;
+    -webkit-tap-highlight-color: transparent;
+    }
   body {
     @apply bg-background text-foreground;
+    min-height: 100dvh;
     }
   button:not(:disabled), [role="button"]:not(:disabled) {
     cursor: pointer;
     }
-  html {
-    @apply font-sans;
+  button, [role="button"] {
+    -webkit-user-select: none;
+    user-select: none;
     }
+  /* iOS Safari auto-zooms inputs whose font-size < 16px on focus. */
+  input, textarea, select {
+    font-size: 16px;
+    }
+}
+
+@utility safe-area-bottom {
+  padding-bottom: max(env(safe-area-inset-bottom), 0px);
 }
