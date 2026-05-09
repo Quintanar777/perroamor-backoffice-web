@@ -13,6 +13,7 @@ import {
   PlusCircle,
   Receipt,
   Tag,
+  Users,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Button } from '@/components/ui/button'
@@ -50,6 +51,7 @@ interface NavItemDef {
   label: string
   icon: LucideIcon
   end?: boolean
+  adminOnly?: boolean
 }
 
 const NAV_ITEMS: NavItemDef[] = [
@@ -60,6 +62,7 @@ const NAV_ITEMS: NavItemDef[] = [
   { to: '/events', label: 'Eventos', icon: CalendarDays },
   { to: '/sales/new', label: 'Nueva Venta', icon: PlusCircle },
   { to: '/sales', label: 'Ventas', icon: Receipt, end: true },
+  { to: '/users', label: 'Usuarios', icon: Users, adminOnly: true },
 ]
 
 const SIDEBAR_KEY = 'perroamor.sidebar.collapsed'
@@ -140,9 +143,11 @@ function SidebarNav({
   collapsed?: boolean
   onNavigate?: () => void
 }) {
+  const role = useAuthStore((s) => s.user?.role)
+  const items = NAV_ITEMS.filter((item) => !item.adminOnly || role === 'ADMIN')
   return (
     <nav className="flex flex-1 flex-col gap-1 px-2 pb-4 pt-3">
-      {NAV_ITEMS.map((item) => (
+      {items.map((item) => (
         <NavItem
           key={item.to}
           item={item}

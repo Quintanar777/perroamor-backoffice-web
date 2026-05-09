@@ -34,6 +34,7 @@ const SalesPage = lazyDefault(() => import('@/features/sales/pages/SalesPage'))
 const SaleDetailPage = lazyDefault(
   () => import('@/features/sales/pages/SaleDetailPage'),
 )
+const UsersPage = lazyDefault(() => import('@/features/users/pages/UsersPage'))
 const NotFoundPage = lazyDefault(() => import('@/pages/NotFoundPage'))
 
 const withSuspense = (node: React.ReactNode) => (
@@ -63,6 +64,12 @@ export const router = createBrowserRouter([
           { path: 'sales', element: withSuspense(<SalesPage />) },
           { path: 'sales/new', element: withSuspense(<NewSalePage />) },
           { path: 'sales/:id', element: withSuspense(<SaleDetailPage />) },
+          {
+            element: <ProtectedRoute requireRole="ADMIN" />,
+            children: [
+              { path: 'users', element: withSuspense(<UsersPage />) },
+            ],
+          },
         ],
       },
     ],

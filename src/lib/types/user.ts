@@ -7,6 +7,25 @@ export interface User {
   email?: string
   role: UserRole
   isActive: boolean
+  createdAt?: string
+  lastLogin?: string | null
+}
+
+export interface CreateUserInput {
+  username: string
+  email: string
+  fullName: string
+  password: string
+  role: UserRole
+}
+
+export interface UpdateUserInput {
+  username: string
+  email: string
+  fullName: string
+  password?: string
+  role: UserRole
+  isActive?: boolean
 }
 
 export interface AuthResponse {
