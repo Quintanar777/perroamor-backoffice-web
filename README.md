@@ -59,17 +59,48 @@ El build aplica:
 
 ## Deploy
 
-La SPA sirve archivos estáticos desde `dist/` con cualquier hosting que soporte SPAs con fallback a `index.html`. Recomendados:
+El repo trae `Dockerfile` + `nginx.conf.template` listos para correr la SPA detrás de nginx con SPA fallback, gzip y cache de assets.
 
-- **Vercel** — `vercel --prod` desde la raíz (auto detecta Vite).
-- **Cloudflare Pages** — build command `pnpm build`, output `dist`.
-- **Netlify** — build command `pnpm build`, publish `dist`, redirects `/* → /index.html 200`.
-- **S3 + CloudFront** — sube `dist/` a S3 con `index.html` como default + 404 fallback.
+### Railway (deploy actual)
 
-En todos los casos, en producción setear:
+1. **Crear servicio** desde el repo de GitHub. Railway autodetecta el `Dockerfile`.
+2. En el servicio → **Variables** → **Build args** (no runtime):
+   - `VITE_API_BASE_URL` = `https://perroamor-backoffice-api-production.up.railway.app/api/v1`
+   > Vite hornea las env vars en build time. Si la cargas como variable runtime, no llega al bundle. Tiene que ser **Build arg**.
+3. **Networking** → **Generate Domain** (o conectar custom domain).
+4. **Healthcheck** (opcional): `/healthz` devuelve `200 ok`.
+5. Cuando Railway expone el dominio del frontend, **agregar ese origen al backend**:
+   ```yaml
+   app:
+     cors:
+       allowed-origins:
+         - http://localhost:5173
+         - https://perroamor-backoffice-web-production.up.railway.app
+         - https://<custom-domain>          # si lo tenés
+   ```
+   Sin esto, el browser bloquea los requests del frontend con CORS.
 
-- `VITE_API_BASE_URL` apuntando al backend deployado (no localhost).
-- En el backend, agregar el dominio del frontend a `app.cors.allowed-origins` para que los pedidos no se bloqueen por CORS.
+### Build local del Docker (smoke test antes de pushear)
+
+```bash
+docker build \
+  --build-arg VITE_API_BASE_URL=http://localhost:8080/api/v1 \
+  -t perroamor-web .
+
+docker run --rm -p 8080:8080 perroamor-web
+# http://localhost:8080
+```
+
+### Otros hostings (alternativa, sin Docker)
+
+La SPA es estática (`dist/`). Cualquier hosting con SPA fallback sirve:
+
+- **Vercel** — `vercel --prod` desde la raíz.
+- **Cloudflare Pages** — build `pnpm build`, output `dist`.
+- **Netlify** — build `pnpm build`, publish `dist`, redirects `/* → /index.html 200`.
+- **S3 + CloudFront** — sube `dist/` con `index.html` como default + 404 fallback.
+
+En todos los casos: setear `VITE_API_BASE_URL` en build time + agregar el origen al CORS del backend.
 
 ## Estructura
 

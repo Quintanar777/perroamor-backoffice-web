@@ -1,0 +1,45 @@
+server {
+    listen       ${PORT};
+    server_name  _;
+
+    root         /usr/share/nginx/html;
+    index        index.html;
+
+    # Compresión para responses
+    gzip on;
+    gzip_vary on;
+    gzip_min_length 1024;
+    gzip_types
+        text/plain
+        text/css
+        text/xml
+        application/json
+        application/javascript
+        application/xml+rss
+        application/wasm
+        image/svg+xml;
+
+    # Assets con hash en el filename → cache largo, immutable
+    location /assets/ {
+        expires    1y;
+        add_header Cache-Control "public, immutable";
+        try_files  $uri =404;
+    }
+
+    # SPA fallback: cualquier ruta cliente cae a index.html
+    location / {
+        try_files $uri $uri/ /index.html;
+    }
+
+    # No cachear el index.html (siempre apunta a los chunks vigentes)
+    location = /index.html {
+        add_header Cache-Control "no-store, no-cache, must-revalidate";
+    }
+
+    # Health endpoint simple para que Railway marque el servicio healthy
+    location = /healthz {
+        access_log off;
+        add_header Content-Type text/plain;
+        return 200 "ok";
+    }
+}
