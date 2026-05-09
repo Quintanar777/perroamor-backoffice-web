@@ -1,4 +1,6 @@
-import { Banknote, CreditCard, Wallet } from 'lucide-react'
+import { useState } from 'react'
+import { Banknote, CreditCard, Plus, Wallet, X } from 'lucide-react'
+import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -94,17 +96,69 @@ export function PaymentSection({
         </div>
       )}
 
-      <div className="space-y-2">
-        <Label htmlFor="customerName">Cliente (opcional)</Label>
-        <Input
-          id="customerName"
-          placeholder="Nombre del cliente"
-          value={customerName}
-          onChange={(e) => onCustomerNameChange(e.target.value)}
+      <CustomerNameField
+        value={customerName}
+        onChange={onCustomerNameChange}
+        disabled={disabled}
+      />
+    </div>
+  )
+}
+
+function CustomerNameField({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string
+  onChange: (value: string) => void
+  disabled?: boolean
+}) {
+  const [expanded, setExpanded] = useState(value.trim().length > 0)
+
+  if (!expanded) {
+    return (
+      <Button
+        type="button"
+        variant="ghost"
+        size="sm"
+        className="text-muted-foreground gap-1.5 px-2"
+        onClick={() => setExpanded(true)}
+        disabled={disabled}
+      >
+        <Plus className="size-4" />
+        Agregar cliente
+      </Button>
+    )
+  }
+
+  return (
+    <div className="space-y-2">
+      <div className="flex items-center justify-between">
+        <Label htmlFor="customerName">Cliente</Label>
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="text-muted-foreground h-7 gap-1 px-2 text-xs"
+          onClick={() => {
+            onChange('')
+            setExpanded(false)
+          }}
           disabled={disabled}
-          className="h-12"
-        />
+        >
+          <X className="size-3" />
+          Quitar
+        </Button>
       </div>
+      <Input
+        id="customerName"
+        placeholder="Nombre del cliente"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+        disabled={disabled}
+        className="h-12"
+      />
     </div>
   )
 }

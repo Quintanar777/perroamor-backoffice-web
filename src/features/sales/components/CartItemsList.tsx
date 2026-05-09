@@ -10,6 +10,7 @@ import {
   type CartItem,
 } from '@/features/sales/store'
 import { formatMoney } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
 function ItemRow({ item }: { item: CartItem }) {
   const updateQty = useCartStore((s) => s.updateQty)
@@ -20,6 +21,7 @@ function ItemRow({ item }: { item: CartItem }) {
 
   const isCombo = item.kind === 'combo'
   const title = isCombo ? item.comboName : item.productName
+  const priceEdited = item.unitPrice !== item.originalPrice
 
   const [priceDraft, setPriceDraft] = useState(item.unitPrice.toString())
 
@@ -117,12 +119,24 @@ function ItemRow({ item }: { item: CartItem }) {
                 ;(e.target as HTMLInputElement).blur()
               }
             }}
-            className="h-9 w-24 text-right text-sm tabular-nums"
+            className={cn(
+              'h-9 w-24 text-right text-sm tabular-nums',
+              priceEdited &&
+                'border-amber-500 bg-amber-50 dark:bg-amber-500/10',
+            )}
           />
         </div>
       </div>
 
-      <div className="flex items-center justify-end">
+      <div className="flex items-center justify-end gap-2">
+        {priceEdited && (
+          <span
+            className="text-amber-600 dark:text-amber-400 text-xs"
+            title={`Precio original: ${formatMoney(item.originalPrice)}`}
+          >
+            * editado
+          </span>
+        )}
         <span className="text-base font-semibold tabular-nums">
           {formatMoney(lineTotal)}
         </span>

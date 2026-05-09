@@ -102,6 +102,7 @@ function ConfigBody({
       productName: product.name,
       variantName: selectedVariant?.variantName ?? null,
       unitPrice,
+      originalPrice: unitPrice,
       personalization:
         personalization.trim().length > 0 ? personalization.trim() : null,
       quantity,

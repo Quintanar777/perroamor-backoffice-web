@@ -1,6 +1,7 @@
 import { ShoppingCart } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { formatMoney } from '@/lib/format'
+import { cn } from '@/lib/utils'
 
 interface Props {
   count: number
@@ -40,7 +41,11 @@ export function SalesBottomBar({ count, total, onOpenCart }: Props) {
         <Button
           onClick={onOpenCart}
           disabled={empty}
-          className="h-10 px-5 text-sm"
+          className={cn(
+            'h-10 px-5 text-sm',
+            !empty &&
+              'bg-emerald-600 text-white hover:bg-emerald-700 focus-visible:ring-emerald-500/40 dark:bg-emerald-600 dark:hover:bg-emerald-700',
+          )}
         >
           Ver carrito
         </Button>

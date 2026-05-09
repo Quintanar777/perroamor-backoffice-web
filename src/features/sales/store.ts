@@ -7,6 +7,7 @@ export interface ProductCartItem {
   productName: string
   variantName: string | null
   unitPrice: number
+  originalPrice: number
   personalization: string | null
   quantity: number
   maxStock: number
@@ -17,6 +18,7 @@ export interface ComboCartItem {
   comboId: number
   comboName: string
   unitPrice: number
+  originalPrice: number
   quantity: number
   maxStock: number
 }

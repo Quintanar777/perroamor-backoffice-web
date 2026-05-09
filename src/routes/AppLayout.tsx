@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { NavLink, Outlet } from 'react-router-dom'
+import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
   Boxes,
   CalendarDays,
@@ -191,6 +191,8 @@ export function AppLayout() {
   const [collapsed, , toggleCollapsed] = usePersistedToggle(SIDEBAR_KEY, true)
   const logout = useLogout()
   const user = useAuthStore((s) => s.user)
+  const location = useLocation()
+  const kioskMode = location.pathname === '/sales/new'
 
   const handleLogout = () => {
     logout.mutate()
@@ -267,7 +269,7 @@ export function AppLayout() {
   return (
     <TooltipProvider delayDuration={200}>
       <div className="bg-background flex min-h-[100dvh]">
-        {desktopSidebar}
+        {!kioskMode && desktopSidebar}
 
         <div className="flex min-w-0 flex-1 flex-col">
           <header className="bg-background/80 sticky top-0 z-30 flex h-14 items-center gap-2 border-b px-4 backdrop-blur md:px-6">
@@ -276,7 +278,7 @@ export function AppLayout() {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="md:hidden"
+                  className={cn(!kioskMode && 'md:hidden')}
                   aria-label="Abrir menú"
                 >
                   <Menu className="size-5" />

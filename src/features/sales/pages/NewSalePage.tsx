@@ -144,6 +144,7 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       productName: product.name,
       variantName: null,
       unitPrice: product.price,
+      originalPrice: product.price,
       personalization: null,
       quantity: 1,
       maxStock: product.stock,
@@ -160,6 +161,7 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       comboId: combo.id,
       comboName: combo.name,
       unitPrice: combo.price,
+      originalPrice: combo.price,
       quantity: 1,
       maxStock: combo.availableStock,
     })
@@ -253,7 +255,7 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
         ) : filteredProducts.length === 0 ? (
           <EmptyResults />
         ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4">
             {filteredProducts.map((p) => (
               <ProductCard
                 key={p.id}
@@ -270,7 +272,7 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       ) : filteredCombos.length === 0 ? (
         <EmptyResults />
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4">
           {filteredCombos.map((c) => (
             <ComboCard
               key={c.id}
@@ -425,7 +427,7 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
 
 function CatalogSkeleton() {
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4">
       {Array.from({ length: 10 }).map((_, i) => (
         <Skeleton key={i} className="aspect-square w-full" />
       ))}
