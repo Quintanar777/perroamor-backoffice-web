@@ -39,8 +39,8 @@ export class ApiError extends Error {
 
 export interface PagedResponse<T> {
   content: T[]
+  page: number
+  size: number
   totalElements: number
   totalPages: number
-  number: number
-  size: number
 }

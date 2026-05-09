@@ -5,6 +5,7 @@ import LoginPage from '@/features/auth/pages/LoginPage'
 import DashboardPage from '@/features/dashboard/pages/DashboardPage'
 import InventoryPage from '@/features/inventory/pages/InventoryPage'
 import BrandsPage from '@/features/catalog/pages/BrandsPage'
+import CombosPage from '@/features/catalog/pages/CombosPage'
 import ProductsPage from '@/features/catalog/pages/ProductsPage'
 import VariantsPage from '@/features/catalog/pages/VariantsPage'
 import EventsPage from '@/features/events/pages/EventsPage'
@@ -29,6 +30,7 @@ export const router = createBrowserRouter([
           { path: 'products', element: <ProductsPage /> },
           { path: 'products/:id/variants', element: <VariantsPage /> },
           { path: 'brands', element: <BrandsPage /> },
+          { path: 'combos', element: <CombosPage /> },
           { path: 'events', element: <EventsPage /> },
           { path: 'sales', element: <SalesPage /> },
           { path: 'sales/new', element: <NewSalePage /> },

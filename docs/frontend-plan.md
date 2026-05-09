@@ -12,7 +12,7 @@
 Reemplaza la UI Vaadin de la app actual. Va a consumir el backend nuevo (`perroamor-backoffice-api`) que expone REST + JWT. La app vieja sigue viva en producción.
 
 ### Referencias (read-only)
-- **Backend plan**: `/Users/erick.quintanar/Documents/personal/repositories/inventory-system/doc/backend-plan.md` — contrato de endpoints y reglas de dominio. Leer ANTES de empezar Fase 2.
+- **Backend plan**: `/Users/erick.quintanar/Documents/personal/repositories/perroamor-backoffice-api/docs/backend-plan.md` — contrato de endpoints y reglas de dominio. Leer ANTES de empezar Fase 2.
 - **App vieja, referencia visual**: `/Users/erick.quintanar/Documents/personal/repositories/inventory-system/src/main/kotlin/com/perroamor/inventory/view/` — los flujos de UI a replicar (especialmente `NewSaleView.kt` y `MainLayout.kt`).
 - **API base URL local**: `http://localhost:8080/api/v1`
 
@@ -23,10 +23,22 @@ Reemplaza la UI Vaadin de la app actual. Va a consumir el backend nuevo (`perroa
 ### MVP scope (Fases 0–6)
 - Auth (login, refresh, /me)
 - Dashboard mínimo (cards con accesos directos al evento actual + métricas)
-- Catálogo: brands, products, variants
+- Catálogo: brands, products, variants, **combos**
 - Events
-- POS (nueva venta) — corazón del MVP
+- POS (nueva venta) — corazón del MVP, con soporte para vender productos sueltos **y combos**
 - Listado de ventas + stats por evento
+
+### Sobre combos (feature clave)
+
+Un **combo** es una agrupación de productos (con opción de variantes) que se vende como una unidad y descuenta stock real de cada componente al venderlo. Reemplaza el workaround histórico de la app vieja, donde los combos eran "productos con stock falso" y al venderse no se descontaba inventario real.
+
+Reglas de dominio (definidas en backend):
+- Precio fijo del combo (descuento implícito), no calculado desde componentes.
+- Stock disponible **derivado**: `min(componente.stock / componente.qty)`. NO se persiste — se recalcula al consultar.
+- Componentes fijos (sin elección de variant al momento de venta).
+- Vender un combo descuenta atómicamente stock de cada componente. Si falta stock en uno → falla con `ProblemDetail` y rollback total.
+- Cancelar venta restituye stock de TODOS los componentes.
+- Endpoint `POST /sales`: cada item del payload es **mutuamente exclusivo** (productId XOR comboId). En la misma venta pueden coexistir items de tipos distintos.
 
 **Fuera del MVP**: reportes avanzados, lector de barras, print de ticket, gestión de usuarios desde UI, i18n, PWA offline.
 
@@ -142,6 +154,7 @@ src/
 │   │   ├── client.ts         # fetch wrapper con auth + ProblemDetail parsing
 │   │   ├── auth.ts           # login, refresh, me
 │   │   ├── catalog.ts        # brands, products, variants
+│   │   ├── combos.ts         # combos (productos compuestos)
 │   │   ├── events.ts
 │   │   └── sales.ts
 │   ├── auth/
@@ -163,9 +176,9 @@ src/
 │   │   ├── hooks/useLogin.ts
 │   │   └── schemas/loginSchema.ts
 │   ├── catalog/
-│   │   ├── pages/{Brands,Products,Variants}Page.tsx
-│   │   ├── components/
-│   │   └── schemas/
+│   │   ├── pages/{Brands,Products,Variants,Combos}Page.tsx
+│   │   ├── components/         # incluye ComboBuilder, ComboItemRow
+│   │   └── schemas/            # incluye comboSchema
 │   ├── events/
 │   │   ├── pages/EventsPage.tsx
 │   │   └── components/
@@ -217,10 +230,10 @@ src/
 13. Reemplazar el `App.tsx` default con un Hello World que use `<Button>` de shadcn.
 
 **Done cuando**:
-- [ ] `pnpm dev` levanta en `:5173` sin errores.
-- [ ] Se ve un botón estilizado de shadcn.
-- [ ] `pnpm build` pasa sin errores.
-- [ ] Commit: `chore: bootstrap vite + react + tailwind + shadcn`.
+- [x] `pnpm dev` levanta en `:5173` sin errores.
+- [x] Se ve un botón estilizado de shadcn.
+- [x] `pnpm build` pasa sin errores.
+- [x] Commit: `chore: bootstrap vite + react + tailwind + shadcn`. _(commit `d3638aa`)_
 
 ---
 
@@ -258,7 +271,7 @@ src/
 5. **Router** (`routes/index.tsx`):
    - React Router v7 con `createBrowserRouter`.
    - Public: `/login`.
-   - Protected (envueltas en `<ProtectedRoute>` + `<AppLayout>`): `/`, `/inventory`, `/products`, `/products/:id/variants`, `/brands`, `/events`, `/sales`, `/sales/new`, `/sales/:id`.
+   - Protected (envueltas en `<ProtectedRoute>` + `<AppLayout>`): `/`, `/inventory`, `/products`, `/products/:id/variants`, `/brands`, `/combos`, `/events`, `/sales`, `/sales/new`, `/sales/:id`.
    - 404 catch-all.
 
 6. **`routes/ProtectedRoute.tsx`**:
@@ -270,7 +283,7 @@ src/
    - Sidebar con nav según rol (espejar `MainLayout.kt` de la app vieja, pero modernizado).
    - Header con toggle theme + dropdown del usuario (avatar + logout).
    - Mobile (<768px): sidebar como `<Sheet>` (hamburguesa).
-   - Items del nav: Dashboard, Inventario, Productos, Marcas, Eventos, Nueva Venta, Ventas. (Usuarios → fase futura).
+   - Items del nav: Dashboard, Inventario, Productos, Marcas, Combos, Eventos, Nueva Venta, Ventas. (Usuarios → fase futura).
 
 8. **Sonner Toaster** montado en root.
 
@@ -279,11 +292,13 @@ src/
 10. **Theme toggle**: light/dark con shadcn + persistencia en `localStorage`.
 
 **Done cuando**:
-- [ ] Visitar ruta protegida sin auth redirige a `/login`.
-- [ ] Layout responde a mobile (sidebar colapsa a Sheet).
-- [ ] Toast de prueba aparece (botón temporal en layout para verificar).
-- [ ] Theme toggle funciona y persiste.
-- [ ] Commit: `feat: cross-cutting (api client, router, layout, providers)`.
+- [x] Visitar ruta protegida sin auth redirige a `/login`.
+- [x] Layout responde a mobile (sidebar colapsa a Sheet).
+- [x] Toast de prueba aparece (botón temporal en layout para verificar).
+- [x] Theme toggle funciona y persiste.
+- [x] Commit: `feat: cross-cutting (api client, router, layout, providers)`. _(commit `9ce62bd`)_
+
+> **Pendiente con el plan actualizado**: agregar la ruta `/combos` y el item "Combos" al nav (deuda de cross-cutting que se paga al implementar Fase 3 con combos).
 
 ---
 
@@ -326,20 +341,20 @@ src/
 6. **Items del nav** se ocultan según rol (ej: "Usuarios" solo si `user.role === 'ADMIN'`).
 
 **Done cuando**:
-- [ ] Login con credenciales válidas redirige al dashboard.
-- [ ] Credenciales inválidas → toast claro, no crashea.
-- [ ] Reload de la página mantiene la sesión.
-- [ ] Logout limpia todo y vuelve a `/login`.
-- [ ] Items del nav respetan el rol.
-- [ ] Commit: `feat(auth): login flow with jwt and persistent session`.
+- [x] Login con credenciales válidas redirige al dashboard.
+- [x] Credenciales inválidas → toast claro, no crashea.
+- [x] Reload de la página mantiene la sesión.
+- [x] Logout limpia todo y vuelve a `/login`.
+- [x] Items del nav respetan el rol.
+- [x] Commit: `feat(auth): login flow with jwt and persistent session`. _(commit `85a73fb`)_
 
 ---
 
-### FASE 3 — Catálogo (Brands, Products, Variants)
+### FASE 3 — Catálogo (Brands, Products, Variants, Combos)
 
-**Objetivo**: CRUD UI completo para los 3 recursos del catálogo, con filtros y paginación.
+**Objetivo**: CRUD UI completo para los 4 recursos del catálogo, con filtros y paginación.
 
-**Pre-requisito**: backend Fase 3 lista.
+**Pre-requisito**: backend Fase 3 lista + feature de combos lista (ya está en backend, post-Fase 6).
 
 **Pasos**:
 
@@ -368,18 +383,33 @@ src/
    - Form de create/edit con todos los campos.
    - Botón "Volver a Productos".
 
-4. **UX común**:
+4. **`features/catalog/pages/CombosPage.tsx`** (`/combos`):
+   - **Filtros**: `<Select>` de marca, `<Input>` de búsqueda con debounce 300ms, toggle `isActive`.
+   - **Tabla** paginada (lee `PagedResponse<Combo>` del backend).
+     - Columnas: name, brand, price, **availableStock** (calculado por el backend), isActive, # de componentes, acciones.
+     - El badge de `availableStock` con color: verde si ≥10, ámbar si entre 1-9, rojo si 0.
+   - **Form de create/edit** en `<Dialog>` o `<Sheet>` (más espacio para los componentes):
+     - Campos top-level: name, brand (Select), price, wholesalePrice, description.
+     - **`<ComboBuilder>`** — sección dinámica para agregar/quitar componentes:
+       - Cada fila: `<Select>` de producto (búsqueda interna), `<Select>` de variant (opcional, solo si el producto `hasVariants`), input de cantidad (con +/-).
+       - Botón "+ Agregar componente" al final.
+       - Validación: al menos 1 componente; no permitir componentes duplicados (mismo product+variant).
+   - **Detalle expandible** en la tabla: click en una fila expande para ver lista de componentes con su `productName`, `variantName`, `quantity`.
+   - Botón "Eliminar" → confirmación → `DELETE /combos/:id` (soft delete).
+
+5. **UX común**:
    - `<Skeleton>` durante loading.
    - `<EmptyState>` cuando no hay datos.
    - Toasts de success/error en cada mutation.
    - Confirmación antes de eliminar.
 
 **Done cuando**:
-- [ ] CRUD de brands, products, variants funciona end-to-end.
-- [ ] Filtros y paginación de products andan.
-- [ ] Validaciones del form coinciden con las del backend (probar enviando data inválida).
-- [ ] Productos seedeados aparecen al cargar `/products`.
-- [ ] Commit: `feat(catalog): brands, products and variants management ui`.
+- [x] CRUD de brands, products, variants, **combos** funciona end-to-end.
+- [x] Filtros y paginación de products y combos andan.
+- [x] Crear combo con 2-3 componentes y verificar `availableStock` cambia al editar stock de algún componente.
+- [x] Validaciones del form coinciden con las del backend (probar enviando data inválida).
+- [x] Productos seedeados aparecen al cargar `/products`.
+- [x] Commit: `feat(catalog): brands, products, variants and combos management ui`.
 
 ---
 
@@ -465,33 +495,53 @@ En landscape el cart se **promueve a sidebar persistente** (~360px ancho fijo) �
 **Componentes** (en `features/sales/components/`):
 - `EventBanner.tsx` — info del evento actual.
 - `BrandFilter.tsx` — chips de marcas con `<RadioGroup>`.
-- `ProductSearchBar.tsx` — input con debounce + icon.
-- `ProductGrid.tsx` — grid responsivo (1 col mobile, 2 sm, 3 md, 4 lg).
-- `ProductCard.tsx` — card con foto/placeholder, name, price, click → abre AddItemDialog.
-- `AddItemDialog.tsx` — Dialog para configurar el item:
+- `CatalogTabs.tsx` — tabs `Productos` / `Combos` (default Productos). Cambia el grid debajo.
+- `ProductSearchBar.tsx` — input con debounce + icon. Reusable en ambos tabs.
+- `ProductGrid.tsx` — grid responsivo (1 col mobile, 2 sm, 3 md, 4 lg) de productos.
+- `ProductCard.tsx` — card con foto/placeholder, name, price, click → abre `AddProductDialog`.
+- `ComboGrid.tsx` — espejo de `ProductGrid` para combos.
+- `ComboCard.tsx` — card distinguible visualmente (border o bg distinto, badge "Combo"). Muestra name, price, **availableStock**. Si availableStock = 0, deshabilitada con opacity baja. Click → abre `AddComboDialog`.
+- `AddProductDialog.tsx` — Dialog para configurar el item de producto:
   - Si `hasVariants`: `<Select>` de variante.
   - `<Input>` cantidad (con +/- buttons).
   - Si `canBePersonalized`: textarea de personalización.
   - Muestra subtotal calculado en vivo.
-- `Cart.tsx` — lista del cart con edit qty inline + remove.
+- `AddComboDialog.tsx` — Dialog para configurar el item de combo:
+  - Lista de componentes (read-only): "1× Collar Vida Mía", "1× Mochila Mimi", etc. Da contexto al cajero de qué incluye.
+  - `<Input>` cantidad (con +/- buttons), validado contra `availableStock` del combo.
+  - Subtotal en vivo (`combo.price × qty`).
+  - Sin variants ni personalización (los combos son fijos).
+- `Cart.tsx` — lista del cart con edit qty inline + remove. Cada línea identifica si es producto o combo (badge o icon distinto).
 - `PaymentSection.tsx` — `<Select>` payment method + inputs de cliente opcionales.
 - `CheckoutButton.tsx` — botón gigante, en mobile fixed bottom.
 
 **Cart state** (`features/sales/store.ts`):
 - Zustand store separado del auth.
-- `items: CartItem[]`, `addItem`, `updateQty`, `removeItem`, `clear`.
-- `getTotal()` selector.
+- `CartItem` es **discriminated union** por `kind`:
+  ```ts
+  type CartItem =
+    | { kind: 'product', productId: number, variantId: number | null,
+        displayName: string, unitPrice: number, qty: number, personalization?: string }
+    | { kind: 'combo', comboId: number, displayName: string, unitPrice: number,
+        qty: number, components: { productName: string, variantName?: string, qty: number }[] };
+  ```
+- `addItem(item)` — si ya existe un item idéntico (mismo combo o mismo product+variant+personalization), suma qty en vez de duplicar.
+- `updateQty(idx, qty)`, `removeItem(idx)`, `clear()`, `getTotal()`.
 
 **Flujo**:
 1. Cargar página → `GET /events/current`. Si no hay → mensaje + botón a `/events`.
-2. `GET /products?brandId=X` (cambio de chip refetch).
-3. Click en `ProductCard` → abre `AddItemDialog`.
-4. Confirmar dialog → agrega al cart store.
+2. **Tabs Productos / Combos**:
+   - Tab Productos: `GET /products?brandId=X` (cambio de chip refetch).
+   - Tab Combos: `GET /combos?brandId=X&isActive=true`.
+3. Click en `ProductCard` → abre `AddProductDialog`. Click en `ComboCard` → abre `AddComboDialog`.
+4. Confirmar dialog → agrega al cart store con el `kind` correcto.
 5. Editar qty / remove en el cart.
-6. Click "Registrar Venta" → `POST /sales` con payload completo.
-7. Success → toast "Venta registrada $XYZ" + clear cart + invalidar `['products']` y `['sales']`.
+6. Click "Registrar Venta" → `POST /sales`. Mapeo del cart al payload:
+   - Item `kind=product` → `{ productId, variantId, quantity, personalization }`.
+   - Item `kind=combo`   → `{ comboId, quantity }`.
+7. Success → toast "Venta registrada $XYZ" + clear cart + invalidar `['products']`, `['combos']` y `['sales']`.
 8. Errores:
-   - Stock insuficiente (422) → toast con detalle por item del backend.
+   - Stock insuficiente (422) → toast con detalle del backend (que ya identifica el componente faltante en el caso de combo).
    - Otro error → toast genérico + log en consola.
 
 **Optimizaciones**:
@@ -500,13 +550,15 @@ En landscape el cart se **promueve a sidebar persistente** (~360px ancho fijo) �
 - Mantener foco en el search después de cerrar el AddItemDialog (para escaneo rápido).
 
 **Done cuando**:
-- [ ] Flujo end-to-end: evento actual → 2-3 items al cart → registrar → ver venta en `/sales`.
-- [ ] Stock se descuenta (verificar vía Swagger o /products).
-- [ ] Stock insuficiente muestra error específico por item.
+- [ ] Flujo end-to-end producto suelto: evento actual → 2-3 items al cart → registrar → ver venta en `/sales`.
+- [ ] Flujo end-to-end combo: agregar combo al cart → registrar → verificar que stock de **cada componente** se descontó.
+- [ ] Venta mixta (producto + combo en el mismo cart) → registra correctamente, ambos items aparecen en el detalle.
+- [ ] Stock insuficiente en combo muestra error específico identificando el componente faltante.
+- [ ] `availableStock` del combo se respeta en el AddComboDialog (no permite agregar más de lo disponible).
 - [ ] **iPad portrait (820px) y landscape (1180px) verifican impecables**. Probado en iPad real o simulador iOS de Xcode — Chrome DevTools NO basta.
 - [ ] En landscape el cart aparece como sidebar persistente; en portrait va abajo.
 - [ ] No deja vender si no hay evento en curso.
-- [ ] Commit: `feat(sales): point-of-sale ui mobile-first`.
+- [ ] Commit: `feat(sales): point-of-sale ui mobile-first with combo support`.
 
 ---
 
@@ -524,9 +576,12 @@ En landscape el cart se **promueve a sidebar persistente** (~360px ancho fijo) �
 
 2. **`features/sales/pages/SaleDetailPage.tsx`** (`/sales/:id`):
    - Card con info de la venta: customer, event, total, payment method, vendedor, fecha, notas.
-   - Tabla de items: product, variant, qty, unitPrice, lineTotal, personalization.
+   - **Tabla de items** que distingue por tipo:
+     - Item de **producto**: muestra `productName` (+ variante si aplica), qty, unitPrice, lineTotal, personalization.
+     - Item de **combo**: muestra `comboName` con badge "Combo" en la columna de descripción, qty, unitPrice, lineTotal.
+       - Opcional: subfila expandible con la composición actual del combo (`GET /combos/:id`) para mostrar qué incluye. Aclarar visualmente que la composición mostrada es la **actual**, no la del momento de la venta (esta limitación está documentada en backend).
    - Botón "Cancelar Venta" (solo si `!isCancelled` y rol ADMIN/MANAGER) con `<Dialog>` de confirmación.
-   - Mutation `PATCH /sales/:id/cancel` + invalidar caché.
+   - Mutation `PATCH /sales/:id/cancel` + invalidar caché. Al cancelar una venta con combos, el toast aclara que el stock de los componentes se restituyó.
 
 3. **Dashboard stats** (`DashboardPage` mejorada):
    - Cuando hay evento actual: card con `GET /sales/stats?eventId=X`.
@@ -534,9 +589,10 @@ En landscape el cart se **promueve a sidebar persistente** (~360px ancho fijo) �
 
 **Done cuando**:
 - [ ] Listado con filtros funciona.
-- [ ] Detalle de venta legible y completo.
+- [ ] Detalle de venta legible y completo, distingue items de producto vs combo.
 - [ ] Cancel funciona, refresca stock (verificar) y refleja `isCancelled` en UI.
-- [ ] Stats del dashboard reflejan ventas reales.
+- [ ] Cancelar una venta de combo restituye stock de **cada componente** (verificar contra `/products/:id` y `/products/:id/variants`).
+- [ ] Stats del dashboard reflejan ventas reales (los combos cuentan como una venta cada uno).
 - [ ] Commit: `feat(sales): list, detail, cancellation and stats ui`.
 
 ---
@@ -620,6 +676,8 @@ Convención: `['domain', 'resource', 'filter?']`.
 - `['catalog', 'brands']`
 - `['catalog', 'products', { brandId: 1, page: 0 }]`
 - `['catalog', 'variants', productId]`
+- `['catalog', 'combos', { brandId: 1, isActive: true, page: 0 }]`
+- `['catalog', 'combos', 'detail', id]`
 - `['events', 'list']`
 - `['events', 'current']`
 - `['sales', 'list', filters]`
@@ -655,7 +713,7 @@ Si la sesión ejecutora tiene engram disponible:
 
 ## 5. Lo que ESTE plan NO cubre (intencionalmente)
 
-- Backend: ver `/Users/erick.quintanar/Documents/personal/repositories/inventory-system/doc/backend-plan.md`.
+- Backend: ver `/Users/erick.quintanar/Documents/personal/repositories/perroamor-backoffice-api/docs/backend-plan.md`.
 - Reportes avanzados / dashboards complejos.
 - Lector de código de barras (POS futuro).
 - Print de ticket de venta (POS futuro).
@@ -672,10 +730,10 @@ Si durante la ejecución aparece una de estas, parar y consultar al usuario.
 
 Cuando todas estas estén ✅, el frontend MVP está terminado:
 
-- [ ] Fase 0: bootstrap
-- [ ] Fase 1: cross-cutting
-- [ ] Fase 2: auth
-- [ ] Fase 3: catálogo
+- [x] Fase 0: bootstrap _(commit `d3638aa`)_
+- [x] Fase 1: cross-cutting _(commit `9ce62bd` — `/combos` agregado en Fase 3)_
+- [x] Fase 2: auth _(commit `85a73fb`)_
+- [x] Fase 3: catálogo _(brands, products, variants y combos)_
 - [ ] Fase 4: events
 - [ ] Fase 5: POS
 - [ ] Fase 6: sales list & stats
@@ -693,10 +751,13 @@ El frontend depende de endpoints del backend. Orden recomendado de ejecución en
 |---|---|---|
 | 0–1 | — | Backend mínimo arriba primero |
 | 2 (auth) | 0–2 | Frontend hasta login funcional |
-| 3 (catalog) | 3 | UI de catálogo necesita endpoints |
+| 3 (catalog) | 3 (parte: brands, products, variants) | UI de catálogo necesita endpoints |
 | 4 (events) | 4 | UI de events necesita endpoints |
-| 5 (sales) | 5 | POS necesita endpoint POST /sales |
+| 5 (sales) | 5 (parte: productos sueltos) | POS necesita endpoint POST /sales |
 | 5 (sales) | 6 | Sales list y stats |
 | 6 (hardening) | 7 (hardening) | En paralelo |
+| **post-Fase 6 (combos)** | **3 (combos) + 5 (combos en POS) + 6 (combos en detalle)** | La feature de combos del backend (`feat(combos)`) habilita: el CombosPage del catálogo, los items de combo en el POS, y la distinción de items en el detalle de venta |
+
+**Nota**: la feature de combos en backend está **post-MVP** (después de Fase 6 hardening). En frontend la integración cruza tres fases (3, 5, 6). Si el frontend va más lento que el backend, se puede arrancar el desarrollo del frontend Fase 3 sin combos y agregarlos después como un PR independiente — el endpoint y el modelo del backend no van a romper retrocompatibilidad.
 
 Recomendación: completar backend hasta Fase 5 antes de empezar Frontend Fase 5. El backend siempre va un paso adelante.

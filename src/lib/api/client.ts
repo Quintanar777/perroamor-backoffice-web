@@ -5,7 +5,7 @@ import { ApiError, type FieldError, type ProblemDetail } from '@/lib/types/api'
 import type { AuthResponse } from '@/lib/types/user'
 
 interface RequestOptions {
-  query?: Record<string, string | number | boolean | undefined | null>
+  query?: Record<string, unknown>
   body?: unknown
   signal?: AbortSignal
   headers?: Record<string, string>
@@ -20,6 +20,7 @@ const buildUrl = (path: string, query?: RequestOptions['query']): string => {
   if (query) {
     for (const [key, value] of Object.entries(query)) {
       if (value === undefined || value === null) continue
+      if (typeof value === 'object') continue
       url.searchParams.set(key, String(value))
     }
   }
