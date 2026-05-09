@@ -14,6 +14,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { EventStatusBadge } from '@/features/events/components/EventStatusBadge'
 import { useCurrentEventQuery } from '@/features/events/hooks/useEvents'
+import { SalesStatsCard } from '@/features/sales/components/SalesStatsCard'
 import { formatDateRange } from '@/lib/format'
 
 export default function DashboardPage() {
@@ -90,15 +91,7 @@ export default function DashboardPage() {
         />
       )}
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Stats del evento</CardTitle>
-          <CardDescription>Se conecta a /sales/stats en Fase 6.</CardDescription>
-        </CardHeader>
-        <CardContent className="text-muted-foreground text-sm">
-          Total vendido, count de ventas, breakdown por método de pago.
-        </CardContent>
-      </Card>
+      {event && <SalesStatsCard eventId={event.id} />}
     </div>
   )
 }

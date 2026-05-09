@@ -588,12 +588,12 @@ En landscape el cart se **promueve a sidebar persistente** (~360px ancho fijo) �
    - Mostrar: total vendido, count de ventas, breakdown por payment method (con `<Badge>` por método).
 
 **Done cuando**:
-- [ ] Listado con filtros funciona.
-- [ ] Detalle de venta legible y completo, distingue items de producto vs combo.
-- [ ] Cancel funciona, refresca stock (verificar) y refleja `isCancelled` en UI.
-- [ ] Cancelar una venta de combo restituye stock de **cada componente** (verificar contra `/products/:id` y `/products/:id/variants`).
-- [ ] Stats del dashboard reflejan ventas reales (los combos cuentan como una venta cada uno).
-- [ ] Commit: `feat(sales): list, detail, cancellation and stats ui`.
+- [x] Listado con filtros funciona.
+- [x] Detalle de venta legible y completo, distingue items de producto vs combo.
+- [x] Cancel funciona, refresca stock (verificar) y refleja `isCancelled` en UI.
+- [x] Cancelar una venta de combo restituye stock de **cada componente** (verificar contra `/products/:id` y `/products/:id/variants`).
+- [x] Stats del dashboard reflejan ventas reales (los combos cuentan como una venta cada uno).
+- [x] Commit: `feat(sales): list, detail, cancellation and stats ui`.
 
 ---
 
@@ -736,7 +736,7 @@ Cuando todas estas estén ✅, el frontend MVP está terminado:
 - [x] Fase 3: catálogo _(brands, products, variants y combos)_
 - [x] Fase 4: events
 - [x] Fase 5: POS _(con soporte de combos y tap-directo + Modelo C de stock)_
-- [ ] Fase 6: sales list & stats
+- [x] Fase 6: sales list & stats
 - [ ] Fase 7: hardening
 - [ ] (opcional) Fase 8: tests
 - [ ] (cuando el usuario quiera) Fase 9: deploy
