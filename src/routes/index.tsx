@@ -1,23 +1,49 @@
+import { lazy, Suspense, type ComponentType } from 'react'
 import { createBrowserRouter } from 'react-router-dom'
+import { RouteFallback } from '@/components/shared/RouteFallback'
 import { AppLayout } from '@/routes/AppLayout'
 import { ProtectedRoute } from '@/routes/ProtectedRoute'
-import LoginPage from '@/features/auth/pages/LoginPage'
-import DashboardPage from '@/features/dashboard/pages/DashboardPage'
-import InventoryPage from '@/features/inventory/pages/InventoryPage'
-import BrandsPage from '@/features/catalog/pages/BrandsPage'
-import CombosPage from '@/features/catalog/pages/CombosPage'
-import ProductsPage from '@/features/catalog/pages/ProductsPage'
-import VariantsPage from '@/features/catalog/pages/VariantsPage'
-import EventsPage from '@/features/events/pages/EventsPage'
-import NewSalePage from '@/features/sales/pages/NewSalePage'
-import SalesPage from '@/features/sales/pages/SalesPage'
-import SaleDetailPage from '@/features/sales/pages/SaleDetailPage'
-import NotFoundPage from '@/pages/NotFoundPage'
+
+const lazyDefault = <T extends ComponentType<unknown>>(
+  importer: () => Promise<{ default: T }>,
+) => lazy(importer)
+
+const LoginPage = lazyDefault(() => import('@/features/auth/pages/LoginPage'))
+const DashboardPage = lazyDefault(
+  () => import('@/features/dashboard/pages/DashboardPage'),
+)
+const BrandsPage = lazyDefault(
+  () => import('@/features/catalog/pages/BrandsPage'),
+)
+const CombosPage = lazyDefault(
+  () => import('@/features/catalog/pages/CombosPage'),
+)
+const ProductsPage = lazyDefault(
+  () => import('@/features/catalog/pages/ProductsPage'),
+)
+const VariantsPage = lazyDefault(
+  () => import('@/features/catalog/pages/VariantsPage'),
+)
+const EventsPage = lazyDefault(
+  () => import('@/features/events/pages/EventsPage'),
+)
+const NewSalePage = lazyDefault(
+  () => import('@/features/sales/pages/NewSalePage'),
+)
+const SalesPage = lazyDefault(() => import('@/features/sales/pages/SalesPage'))
+const SaleDetailPage = lazyDefault(
+  () => import('@/features/sales/pages/SaleDetailPage'),
+)
+const NotFoundPage = lazyDefault(() => import('@/pages/NotFoundPage'))
+
+const withSuspense = (node: React.ReactNode) => (
+  <Suspense fallback={<RouteFallback />}>{node}</Suspense>
+)
 
 export const router = createBrowserRouter([
   {
     path: '/login',
-    element: <LoginPage />,
+    element: withSuspense(<LoginPage />),
   },
   {
     element: <ProtectedRoute />,
@@ -25,19 +51,21 @@ export const router = createBrowserRouter([
       {
         element: <AppLayout />,
         children: [
-          { index: true, element: <DashboardPage /> },
-          { path: 'inventory', element: <InventoryPage /> },
-          { path: 'products', element: <ProductsPage /> },
-          { path: 'products/:id/variants', element: <VariantsPage /> },
-          { path: 'brands', element: <BrandsPage /> },
-          { path: 'combos', element: <CombosPage /> },
-          { path: 'events', element: <EventsPage /> },
-          { path: 'sales', element: <SalesPage /> },
-          { path: 'sales/new', element: <NewSalePage /> },
-          { path: 'sales/:id', element: <SaleDetailPage /> },
+          { index: true, element: withSuspense(<DashboardPage />) },
+          { path: 'products', element: withSuspense(<ProductsPage />) },
+          {
+            path: 'products/:id/variants',
+            element: withSuspense(<VariantsPage />),
+          },
+          { path: 'brands', element: withSuspense(<BrandsPage />) },
+          { path: 'combos', element: withSuspense(<CombosPage />) },
+          { path: 'events', element: withSuspense(<EventsPage />) },
+          { path: 'sales', element: withSuspense(<SalesPage />) },
+          { path: 'sales/new', element: withSuspense(<NewSalePage />) },
+          { path: 'sales/:id', element: withSuspense(<SaleDetailPage />) },
         ],
       },
     ],
   },
-  { path: '*', element: <NotFoundPage /> },
+  { path: '*', element: withSuspense(<NotFoundPage />) },
 ])

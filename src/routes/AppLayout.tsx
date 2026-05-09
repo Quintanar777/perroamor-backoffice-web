@@ -7,7 +7,6 @@ import {
   LogOut,
   type LucideIcon,
   Menu,
-  Package,
   PackagePlus,
   PlusCircle,
   Receipt,
@@ -31,6 +30,7 @@ import {
   SheetTrigger,
 } from '@/components/ui/sheet'
 import { Separator } from '@/components/ui/separator'
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary'
 import { ThemeToggle } from '@/components/shared/ThemeToggle'
 import { useLogout } from '@/features/auth/hooks/useLogout'
 import { useAuthStore } from '@/lib/auth/store'
@@ -45,7 +45,6 @@ interface NavItemDef {
 
 const NAV_ITEMS: NavItemDef[] = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
-  { to: '/inventory', label: 'Inventario', icon: Package },
   { to: '/products', label: 'Productos', icon: Boxes },
   { to: '/brands', label: 'Marcas', icon: Tag },
   { to: '/combos', label: 'Combos', icon: PackagePlus },
@@ -236,8 +235,32 @@ export function AppLayout() {
         </header>
 
         <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
-          <Outlet />
+          <ErrorBoundary fallback={<FeatureCrashFallback />}>
+            <Outlet />
+          </ErrorBoundary>
         </main>
+      </div>
+    </div>
+  )
+}
+
+function FeatureCrashFallback() {
+  return (
+    <div className="flex min-h-[40dvh] items-center justify-center">
+      <div className="bg-card max-w-md space-y-3 rounded-lg border p-6 text-center">
+        <span className="text-3xl">🦴</span>
+        <h2 className="text-lg font-semibold">Esta sección se rompió</h2>
+        <p className="text-muted-foreground text-sm">
+          El resto de la app sigue funcionando. Probá recargar o moverte a otra
+          sección desde el menú.
+        </p>
+        <button
+          type="button"
+          onClick={() => window.location.reload()}
+          className="bg-primary text-primary-foreground hover:bg-primary/90 inline-flex h-10 items-center justify-center rounded-md px-4 text-sm font-medium"
+        >
+          Recargar
+        </button>
       </div>
     </div>
   )

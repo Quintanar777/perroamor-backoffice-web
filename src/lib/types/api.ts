@@ -44,3 +44,10 @@ export interface PagedResponse<T> {
   totalElements: number
   totalPages: number
 }
+
+export class NetworkError extends Error {
+  constructor(message = 'No se pudo conectar al servidor') {
+    super(message)
+    this.name = 'NetworkError'
+  }
+}

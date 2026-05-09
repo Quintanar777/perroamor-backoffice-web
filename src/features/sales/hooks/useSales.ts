@@ -6,7 +6,7 @@ import {
 } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { salesApi, salesKeys } from '@/lib/api/sales'
-import { ApiError } from '@/lib/types/api'
+import { ApiError, NetworkError } from '@/lib/types/api'
 import type { Sale, SaleFilters } from '@/lib/types/sale'
 
 export function useSalesQuery(filters: SaleFilters) {
@@ -50,11 +50,18 @@ export function useCancelSale() {
       })
     },
     onError: (error) => {
+      if (error instanceof NetworkError) {
+        toast.error('No se pudo conectar al servidor', {
+          description:
+            'La cancelación no se aplicó. Reintenta cuando el backend esté disponible.',
+        })
+        return
+      }
       if (error instanceof ApiError) {
         toast.error(error.title, { description: error.detail })
-      } else {
-        toast.error('No se pudo cancelar la venta')
+        return
       }
+      toast.error('No se pudo cancelar la venta')
     },
   })
 }

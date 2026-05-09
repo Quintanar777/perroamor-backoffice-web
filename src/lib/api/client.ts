@@ -1,8 +1,25 @@
 import { env } from '@/lib/env'
 import { useAuthStore } from '@/lib/auth/store'
 import { tokenStorage } from '@/lib/auth/tokens'
-import { ApiError, type FieldError, type ProblemDetail } from '@/lib/types/api'
+import {
+  ApiError,
+  NetworkError,
+  type FieldError,
+  type ProblemDetail,
+} from '@/lib/types/api'
 import type { AuthResponse } from '@/lib/types/user'
+
+const safeFetch = async (
+  url: string,
+  init: RequestInit,
+): Promise<Response> => {
+  try {
+    return await fetch(url, init)
+  } catch (err) {
+    if (err instanceof DOMException && err.name === 'AbortError') throw err
+    throw new NetworkError()
+  }
+}
 
 interface RequestOptions {
   query?: Record<string, unknown>
@@ -55,7 +72,7 @@ const performRefresh = async (): Promise<string | null> => {
   if (!refreshToken) return null
 
   try {
-    const response = await fetch(buildUrl('/auth/refresh'), {
+    const response = await safeFetch(buildUrl('/auth/refresh'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ refreshToken }),
@@ -101,7 +118,7 @@ const request = async <T>(
     bodyPayload = JSON.stringify(options.body)
   }
 
-  const response = await fetch(url, {
+  const response = await safeFetch(url, {
     method,
     headers,
     body: bodyPayload,
@@ -113,7 +130,7 @@ const request = async <T>(
     if (newToken) {
       const retryHeaders = new Headers(headers)
       retryHeaders.set('Authorization', `Bearer ${newToken}`)
-      const retry = await fetch(url, {
+      const retry = await safeFetch(url, {
         method,
         headers: retryHeaders,
         body: bodyPayload,
