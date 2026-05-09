@@ -66,14 +66,34 @@ export function CatalogToolbar({
         variant="outline"
         className="flex-wrap justify-start"
       >
-        <ToggleGroupItem value={ALL} className="px-4">
+        <ToggleGroupItem
+          value={ALL}
+          className="h-12 px-6 text-base font-medium"
+        >
           Todas
         </ToggleGroupItem>
-        {activeBrands.map((b) => (
-          <ToggleGroupItem key={b.id} value={String(b.id)} className="px-4">
-            {b.name}
-          </ToggleGroupItem>
-        ))}
+        {activeBrands.map((b) => {
+          const isActive = brandId === String(b.id)
+          const color = b.baseColor
+          const style = color
+            ? {
+                background: isActive
+                  ? `linear-gradient(135deg, ${color} 0%, var(--background) 110%)`
+                  : `linear-gradient(135deg, ${color}33 0%, var(--background) 70%)`,
+                borderColor: isActive ? color : `${color}66`,
+              }
+            : undefined
+          return (
+            <ToggleGroupItem
+              key={b.id}
+              value={String(b.id)}
+              className="h-12 px-6 text-base font-medium text-foreground"
+              style={style}
+            >
+              {b.name}
+            </ToggleGroupItem>
+          )
+        })}
       </ToggleGroup>
     </div>
   )
