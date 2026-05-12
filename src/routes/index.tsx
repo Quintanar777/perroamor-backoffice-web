@@ -34,6 +34,9 @@ const SalesPage = lazyDefault(() => import('@/features/sales/pages/SalesPage'))
 const SaleDetailPage = lazyDefault(
   () => import('@/features/sales/pages/SaleDetailPage'),
 )
+const SalesReportPage = lazyDefault(
+  () => import('@/features/reports/pages/SalesReportPage'),
+)
 const UsersPage = lazyDefault(() => import('@/features/users/pages/UsersPage'))
 const NotFoundPage = lazyDefault(() => import('@/pages/NotFoundPage'))
 
@@ -64,6 +67,15 @@ export const router = createBrowserRouter([
           { path: 'sales', element: withSuspense(<SalesPage />) },
           { path: 'sales/new', element: withSuspense(<NewSalePage />) },
           { path: 'sales/:id', element: withSuspense(<SaleDetailPage />) },
+          {
+            element: <ProtectedRoute requireRole="MANAGER" />,
+            children: [
+              {
+                path: 'reports/sales',
+                element: withSuspense(<SalesReportPage />),
+              },
+            ],
+          },
           {
             element: <ProtectedRoute requireRole="ADMIN" />,
             children: [

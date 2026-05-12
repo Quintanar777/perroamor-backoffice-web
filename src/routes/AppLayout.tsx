@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import {
+  BarChart2,
   Boxes,
   CalendarDays,
   LayoutDashboard,
@@ -52,6 +53,7 @@ interface NavItemDef {
   icon: LucideIcon
   end?: boolean
   adminOnly?: boolean
+  managerOrAdmin?: boolean
 }
 
 const NAV_ITEMS: NavItemDef[] = [
@@ -62,6 +64,7 @@ const NAV_ITEMS: NavItemDef[] = [
   { to: '/events', label: 'Eventos', icon: CalendarDays },
   { to: '/sales/new', label: 'Nueva Venta', icon: PlusCircle },
   { to: '/sales', label: 'Ventas', icon: Receipt, end: true },
+  { to: '/reports/sales', label: 'Reportes', icon: BarChart2, managerOrAdmin: true },
   { to: '/users', label: 'Usuarios', icon: Users, adminOnly: true },
 ]
 
@@ -144,7 +147,11 @@ function SidebarNav({
   onNavigate?: () => void
 }) {
   const role = useAuthStore((s) => s.user?.role)
-  const items = NAV_ITEMS.filter((item) => !item.adminOnly || role === 'ADMIN')
+  const items = NAV_ITEMS.filter((item) => {
+    if (item.adminOnly) return role === 'ADMIN'
+    if (item.managerOrAdmin) return role === 'ADMIN' || role === 'MANAGER'
+    return true
+  })
   return (
     <nav className="flex flex-1 flex-col gap-1 px-2 pb-4 pt-3">
       {items.map((item) => (
