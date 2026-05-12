@@ -91,7 +91,7 @@ export default function CombosPage() {
     page,
     size: PAGE_SIZE,
     brandId: brandId === ALL ? undefined : Number(brandId),
-    search: search.trim().length > 0 ? search.trim() : undefined,
+    q: search.trim().length > 0 ? search.trim() : undefined,
     isActive:
       activeFilter === 'all'
         ? undefined

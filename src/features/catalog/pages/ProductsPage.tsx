@@ -1,8 +1,7 @@
-import { useState } from 'react'
-import { Layers, Pencil, Plus, Search, Trash2 } from 'lucide-react'
+import { useEffect, useState } from 'react'
+import { Check, Layers, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
 import { Link } from 'react-router-dom'
-import { Badge } from '@/components/ui/badge'
-import { BrandBadge } from '@/components/shared/BrandBadge'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import {
@@ -12,10 +11,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { BrandBadge } from '@/components/shared/BrandBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { DataTable, type DataTableColumn } from '@/components/shared/DataTable'
 import { EmptyState } from '@/components/shared/EmptyState'
-import { Money } from '@/components/shared/Money'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Pagination } from '@/components/shared/Pagination'
 import { ProductFormDialog } from '@/features/catalog/components/ProductFormDialog'
@@ -24,12 +23,20 @@ import {
   useDeleteProduct,
   useProductCategoriesQuery,
   useProductsQuery,
+  useUpdateProduct,
 } from '@/features/catalog/hooks/useProducts'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
+import { ApiError, NetworkError } from '@/lib/types/api'
 import type { Product } from '@/lib/types/catalog'
 
 const PAGE_SIZE = 10
 const ALL = '__all__'
+
+type RowEdit = {
+  price?: number
+  wholesalePrice?: number
+  stock?: number
+}
 
 export default function ProductsPage() {
   const [page, setPage] = useState(0)
@@ -43,17 +50,27 @@ export default function ProductsPage() {
     size: PAGE_SIZE,
     brandId: brandId === ALL ? undefined : Number(brandId),
     category: category === ALL ? undefined : category,
-    search: search.trim().length > 0 ? search.trim() : undefined,
+    q: search.trim().length > 0 ? search.trim() : undefined,
   }
 
   const productsQuery = useProductsQuery(filters)
   const brandsQuery = useBrandsQuery()
   const categoriesQuery = useProductCategoriesQuery()
   const deleteProduct = useDeleteProduct()
+  const updateProduct = useUpdateProduct()
 
   const [editing, setEditing] = useState<Product | null>(null)
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<Product | null>(null)
+
+  // Inline edit state
+  const [edits, setEdits] = useState<Map<number, RowEdit>>(() => new Map())
+  const [saving, setSaving] = useState<Set<number>>(() => new Set())
+
+  // Discard all inline edits when filters or page change
+  useEffect(() => {
+    setEdits(new Map())
+  }, [brandId, category, search, page])
 
   const formOpen = creating || editing !== null
   const closeForm = () => {
@@ -61,17 +78,89 @@ export default function ProductsPage() {
     setEditing(null)
   }
 
-  const resetPage = () => setPage(0)
+  // ── Inline edit helpers ────────────────────────────────────────────────────
 
-  const handleDelete = async () => {
-    if (!deleting) return
+  function getVal<K extends keyof Required<RowEdit>>(
+    p: Product,
+    field: K,
+  ): Required<RowEdit>[K] {
+    return (edits.get(p.id)?.[field] ?? p[field]) as Required<RowEdit>[K]
+  }
+
+  function setField(id: number, patch: RowEdit) {
+    setEdits((prev) => new Map(prev).set(id, { ...prev.get(id), ...patch }))
+  }
+
+  function isDirty(p: Product): boolean {
+    const e = edits.get(p.id)
+    if (!e) return false
+    return (
+      (e.price !== undefined && e.price !== p.price) ||
+      (e.wholesalePrice !== undefined && e.wholesalePrice !== p.wholesalePrice) ||
+      (e.stock !== undefined && e.stock !== p.stock)
+    )
+  }
+
+  function discard(id: number) {
+    setEdits((prev) => {
+      const m = new Map(prev)
+      m.delete(id)
+      return m
+    })
+  }
+
+  async function save(p: Product) {
+    if (!isDirty(p) || saving.has(p.id)) return
+    const e = edits.get(p.id) ?? {}
+    setSaving((prev) => new Set(prev).add(p.id))
     try {
-      await deleteProduct.mutateAsync(deleting)
-      setDeleting(null)
-    } catch {
-      // toast handled
+      await updateProduct.mutateAsync({
+        id: p.id,
+        body: {
+          name: p.name,
+          brandId: p.brandId,
+          category: p.category,
+          description: p.description,
+          price: e.price ?? p.price,
+          wholesalePrice: e.wholesalePrice ?? p.wholesalePrice,
+          stock: e.stock ?? p.stock,
+          canBePersonalized: p.canBePersonalized,
+          hasVariants: p.hasVariants,
+          isActive: p.isActive,
+        },
+      })
+      discard(p.id)
+    } catch (err) {
+      if (err instanceof NetworkError) {
+        toast.error('Sin conexión', { description: 'No se pudo guardar el producto.' })
+      } else if (err instanceof ApiError) {
+        toast.error(err.title, { description: err.detail })
+      } else {
+        toast.error('Error al guardar')
+      }
+    } finally {
+      setSaving((prev) => {
+        const s = new Set(prev)
+        s.delete(p.id)
+        return s
+      })
     }
   }
+
+  function handleKeyDown(p: Product) {
+    return (e: React.KeyboardEvent<HTMLInputElement>) => {
+      if (e.key === 'Enter') {
+        e.preventDefault()
+        void save(p)
+      }
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        discard(p.id)
+      }
+    }
+  }
+
+  // ── Table columns ──────────────────────────────────────────────────────────
 
   const products = productsQuery.data?.content ?? []
   const totalElements = productsQuery.data?.totalElements ?? 0
@@ -103,89 +192,155 @@ export default function ProductsPage() {
       cell: (p) => <BrandBadge name={p.brandName} color={p.brandColor} />,
     },
     {
-      key: 'category',
-      header: 'Categoría',
-      headerClassName: 'w-32',
-      cell: (p) => <span className="text-muted-foreground">{p.category}</span>,
-    },
-    {
       key: 'price',
-      header: <span className="text-right block">Precio</span>,
+      header: <span className="block text-right">Precio</span>,
       headerClassName: 'w-28 text-right',
       className: 'text-right',
-      cell: (p) => <Money value={p.price} />,
+      cell: (p) => (
+        <Input
+          type="number"
+          min={0}
+          step={0.01}
+          value={getVal(p, 'price')}
+          onChange={(e) => {
+            const n = e.target.valueAsNumber
+            if (!isNaN(n)) setField(p.id, { price: n })
+          }}
+          onKeyDown={handleKeyDown(p)}
+          className="h-7 w-full text-right tabular-nums"
+        />
+      ),
     },
     {
       key: 'wholesalePrice',
-      header: <span className="text-right block">Mayoreo</span>,
+      header: <span className="block text-right">Mayoreo</span>,
       headerClassName: 'w-28 text-right',
-      className: 'text-right text-muted-foreground',
-      cell: (p) => <Money value={p.wholesalePrice} />,
+      className: 'text-right',
+      cell: (p) => (
+        <Input
+          type="number"
+          min={0}
+          step={0.01}
+          value={getVal(p, 'wholesalePrice')}
+          onChange={(e) => {
+            const n = e.target.valueAsNumber
+            if (!isNaN(n)) setField(p.id, { wholesalePrice: n })
+          }}
+          onKeyDown={handleKeyDown(p)}
+          className="h-7 w-full text-right tabular-nums"
+        />
+      ),
     },
     {
       key: 'stock',
-      header: <span className="text-right block">Stock</span>,
-      headerClassName: 'w-20 text-right',
-      className: 'text-right tabular-nums',
-      cell: (p) => (p.hasVariants ? '—' : p.stock),
-    },
-    {
-      key: 'flags',
-      header: 'Atributos',
-      headerClassName: 'w-32',
-      cell: (p) => (
-        <div className="flex flex-wrap gap-1">
-          {p.hasVariants && <Badge variant="secondary">Variantes</Badge>}
-          {p.canBePersonalized && <Badge variant="secondary">Personaliza</Badge>}
-          {!p.isActive && <Badge variant="outline">Inactivo</Badge>}
-        </div>
-      ),
+      header: <span className="block text-right">Stock</span>,
+      headerClassName: 'w-24 text-right',
+      className: 'text-right',
+      cell: (p) =>
+        p.hasVariants ? (
+          <span className="text-muted-foreground">—</span>
+        ) : (
+          <Input
+            type="number"
+            min={0}
+            step={1}
+            value={getVal(p, 'stock')}
+            onChange={(e) => {
+              const n = e.target.valueAsNumber
+              if (!isNaN(n)) setField(p.id, { stock: Math.round(n) })
+            }}
+            onKeyDown={handleKeyDown(p)}
+            className="h-7 w-full text-right tabular-nums"
+          />
+        ),
     },
     {
       key: 'actions',
       header: <span className="sr-only">Acciones</span>,
       headerClassName: 'w-32 text-right',
       className: 'text-right',
-      cell: (p) => (
-        <div className="flex justify-end gap-1">
-          {p.hasVariants && (
+      cell: (p) => {
+        const dirty = isDirty(p)
+        const isSaving = saving.has(p.id)
+        return (
+          <div className="flex justify-end gap-1">
+            {dirty && (
+              <>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label={`Guardar ${p.name}`}
+                  disabled={isSaving}
+                  onClick={() => void save(p)}
+                  className="text-green-600 hover:text-green-700"
+                >
+                  <Check className="size-4" />
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  aria-label="Descartar cambios"
+                  disabled={isSaving}
+                  onClick={() => discard(p.id)}
+                >
+                  <X className="size-4" />
+                </Button>
+              </>
+            )}
+            {p.hasVariants && (
+              <Button
+                variant="ghost"
+                size="icon"
+                asChild
+                aria-label={`Variantes de ${p.name}`}
+              >
+                <Link to={`/products/${p.id}/variants`}>
+                  <Layers className="size-4" />
+                </Link>
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
-              asChild
-              aria-label={`Variantes de ${p.name}`}
+              aria-label={`Editar ${p.name}`}
+              onClick={() => {
+                discard(p.id)
+                setEditing(p)
+              }}
             >
-              <Link to={`/products/${p.id}/variants`}>
-                <Layers className="size-4" />
-              </Link>
+              <Pencil className="size-4" />
             </Button>
-          )}
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={`Editar ${p.name}`}
-            onClick={() => setEditing(p)}
-          >
-            <Pencil className="size-4" />
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            aria-label={`Eliminar ${p.name}`}
-            onClick={() => setDeleting(p)}
-          >
-            <Trash2 className="size-4" />
-          </Button>
-        </div>
-      ),
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Eliminar ${p.name}`}
+              onClick={() => setDeleting(p)}
+            >
+              <Trash2 className="size-4" />
+            </Button>
+          </div>
+        )
+      },
     },
   ]
+
+  // ── Render ─────────────────────────────────────────────────────────────────
+
+  const handleDelete = async () => {
+    if (!deleting) return
+    try {
+      await deleteProduct.mutateAsync(deleting)
+      setDeleting(null)
+    } catch {
+      // toast handled in hook
+    }
+  }
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Productos"
-        description="Catálogo de productos por marca."
+        description="Editá precio, mayoreo, stock y atributos directamente en la tabla. Enter para guardar, Esc para descartar."
         actions={
           <Button onClick={() => setCreating(true)}>
             <Plus className="size-4" />
@@ -197,10 +352,7 @@ export default function ProductsPage() {
       <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]">
         <Select
           value={brandId}
-          onValueChange={(v) => {
-            setBrandId(v)
-            resetPage()
-          }}
+          onValueChange={(v) => setBrandId(v)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Marca" />
@@ -217,10 +369,7 @@ export default function ProductsPage() {
 
         <Select
           value={category}
-          onValueChange={(v) => {
-            setCategory(v)
-            resetPage()
-          }}
+          onValueChange={(v) => setCategory(v)}
         >
           <SelectTrigger>
             <SelectValue placeholder="Categoría" />
@@ -239,10 +388,7 @@ export default function ProductsPage() {
           <Search className="text-muted-foreground absolute top-1/2 left-3 size-4 -translate-y-1/2" />
           <Input
             value={searchInput}
-            onChange={(e) => {
-              setSearchInput(e.target.value)
-              resetPage()
-            }}
+            onChange={(e) => setSearchInput(e.target.value)}
             placeholder="Buscar por nombre..."
             className="pl-9"
           />

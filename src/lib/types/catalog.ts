@@ -77,7 +77,7 @@ export interface ProductFilters {
   size?: number
   brandId?: number
   category?: string
-  search?: string
+  q?: string
 }
 
 export interface ComboItem {
@@ -124,6 +124,6 @@ export interface ComboFilters {
   page?: number
   size?: number
   brandId?: number
-  search?: string
+  q?: string
   isActive?: boolean
 }
