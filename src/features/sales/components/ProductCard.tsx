@@ -1,7 +1,5 @@
-import { Settings2 } from 'lucide-react'
 import { BrandBadge } from '@/components/shared/BrandBadge'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { formatMoney } from '@/lib/format'
 import type { Product } from '@/lib/types/catalog'
@@ -26,17 +24,26 @@ export function ProductCard({
     !!onConfigure && (product.hasVariants || product.canBePersonalized)
   const hasInCart = quantityInCart > 0
 
+  const handleClick = () => {
+    if (disabled) return
+    if (canConfigure) {
+      onConfigure?.(product)
+    } else {
+      onSelect(product)
+    }
+  }
+
   return (
     <Card
       role="button"
       tabIndex={disabled ? -1 : 0}
       aria-disabled={disabled}
-      onClick={() => !disabled && onSelect(product)}
+      onClick={handleClick}
       onKeyDown={(e) => {
         if (disabled) return
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault()
-          onSelect(product)
+          handleClick()
         }
       }}
       className={cn(
@@ -84,25 +91,11 @@ export function ProductCard({
         <span className="text-2xl font-bold tabular-nums">
           {formatMoney(product.price)}
         </span>
-        {isOutOfStock ? (
+        {isOutOfStock && (
           <Badge variant="outline" className="text-destructive border-destructive">
             Agotado
           </Badge>
-        ) : canConfigure ? (
-          <Button
-            type="button"
-            variant="ghost"
-            size="icon"
-            className="size-8"
-            aria-label={`Detallar ${product.name}`}
-            onClick={(e) => {
-              e.stopPropagation()
-              onConfigure?.(product)
-            }}
-          >
-            <Settings2 className="size-4" />
-          </Button>
-        ) : null}
+        )}
       </div>
     </Card>
   )

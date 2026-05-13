@@ -40,13 +40,13 @@ export const variantsApi = {
   create: (productId: number, body: ProductVariantInput): Promise<ProductVariant> =>
     apiPost<ProductVariant>(`/products/${productId}/variants`, body),
   update: (
-    productId: number,
+    _productId: number,
     variantId: number,
     body: ProductVariantInput,
   ): Promise<ProductVariant> =>
-    apiPut<ProductVariant>(`/products/${productId}/variants/${variantId}`, body),
-  remove: (productId: number, variantId: number): Promise<void> =>
-    apiDelete<void>(`/products/${productId}/variants/${variantId}`),
+    apiPut<ProductVariant>(`/variants/${variantId}`, body),
+  remove: (_productId: number, variantId: number): Promise<void> =>
+    apiDelete<void>(`/variants/${variantId}`),
 }
 
 export const combosApi = {

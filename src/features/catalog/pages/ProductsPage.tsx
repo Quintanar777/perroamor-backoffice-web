@@ -238,7 +238,7 @@ export default function ProductsPage() {
       className: 'text-right',
       cell: (p) =>
         p.hasVariants ? (
-          <span className="text-muted-foreground">—</span>
+          <span className="tabular-nums">{p.stock}</span>
         ) : (
           <Input
             type="number"

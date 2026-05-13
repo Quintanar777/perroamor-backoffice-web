@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Download, X } from 'lucide-react'
+import { ChevronDown, ChevronRight, Download, X } from 'lucide-react'
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -12,7 +12,6 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Skeleton } from '@/components/ui/skeleton'
-import { DataTable, type DataTableColumn } from '@/components/shared/DataTable'
 import { DatePicker } from '@/components/shared/DatePicker'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Money } from '@/components/shared/Money'
@@ -22,9 +21,14 @@ import { useSalesReportQuery } from '@/features/reports/hooks/useSalesReport'
 import { catalogKeys, productsApi } from '@/lib/api/catalog'
 import { downloadSalesReportCsv } from '@/lib/api/reports'
 import { ApiError, NetworkError } from '@/lib/types/api'
-import type { SalesReportFilters, SalesReportRow } from '@/lib/types/report'
+import type {
+  SalesReportFilters,
+  SalesReportRow,
+  SalesReportVariantRow,
+} from '@/lib/types/report'
 import type { PaymentMethod } from '@/lib/types/sale'
 import { PAYMENT_METHOD_LABEL } from '@/lib/types/sale'
+import { cn } from '@/lib/utils'
 
 const ALL = '__all__'
 
@@ -33,40 +37,6 @@ const toDateTimeStart = (date: string) =>
 const toDateTimeEnd = (date: string) =>
   date.length > 0 ? `${date}T23:59:59` : undefined
 
-const COLUMNS: DataTableColumn<SalesReportRow>[] = [
-  {
-    key: 'brand',
-    header: 'Marca',
-    cell: (r) => <span className="font-medium">{r.brandName}</span>,
-  },
-  {
-    key: 'product',
-    header: 'Producto',
-    cell: (r) => r.productName,
-  },
-  {
-    key: 'units',
-    header: <span className="block text-right">Unidades</span>,
-    headerClassName: 'w-28 text-right',
-    className: 'text-right tabular-nums',
-    cell: (r) => r.totalQuantity,
-  },
-  {
-    key: 'revenue',
-    header: <span className="block text-right">Ingresos</span>,
-    headerClassName: 'w-36 text-right',
-    className: 'text-right',
-    cell: (r) => <Money value={r.totalRevenue} />,
-  },
-  {
-    key: 'sales',
-    header: <span className="block text-right">Ventas</span>,
-    headerClassName: 'w-24 text-right',
-    className: 'text-right tabular-nums text-muted-foreground',
-    cell: (r) => r.salesCount,
-  },
-]
-
 export default function SalesReportPage() {
   const [brandId, setBrandId] = useState<string>(ALL)
   const [productId, setProductId] = useState<string>(ALL)
@@ -74,6 +44,7 @@ export default function SalesReportPage() {
   const [startDate, setStartDate] = useState('')
   const [endDate, setEndDate] = useState('')
   const [isExporting, setIsExporting] = useState(false)
+  const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
   const brandsQuery = useBrandsQuery()
   const productsQuery = useQuery({
@@ -128,6 +99,18 @@ export default function SalesReportPage() {
     } finally {
       setIsExporting(false)
     }
+  }
+
+  const toggleExpand = (productId: number) => {
+    setExpanded((prev) => {
+      const next = new Set(prev)
+      if (next.has(productId)) {
+        next.delete(productId)
+      } else {
+        next.add(productId)
+      }
+      return next
+    })
   }
 
   const report = reportQuery.data
@@ -260,14 +243,149 @@ export default function SalesReportPage() {
           description="Ajustá los filtros o registrá ventas para ver resultados aquí."
         />
       ) : (
-        <DataTable
-          columns={COLUMNS}
-          data={rows}
-          rowKey={(r) => `${r.brandId}-${r.productId}`}
+        <ReportTable
+          rows={rows}
           loading={isLoading}
+          expanded={expanded}
+          onToggle={toggleExpand}
         />
       )}
     </div>
+  )
+}
+
+function ReportTable({
+  rows,
+  loading,
+  expanded,
+  onToggle,
+}: {
+  rows: SalesReportRow[]
+  loading: boolean
+  expanded: Set<number>
+  onToggle: (productId: number) => void
+}) {
+  return (
+    <div className="rounded-md border">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b bg-muted/40">
+            <th className="w-10 px-3 py-3" />
+            <th className="px-4 py-3 text-left font-medium">Marca</th>
+            <th className="px-4 py-3 text-left font-medium">Producto</th>
+            <th className="w-28 px-4 py-3 text-right font-medium">Stock</th>
+            <th className="w-28 px-4 py-3 text-right font-medium">Unidades</th>
+            <th className="w-36 px-4 py-3 text-right font-medium">Ingresos</th>
+            <th className="w-24 px-4 py-3 text-right font-medium">Ventas</th>
+          </tr>
+        </thead>
+        <tbody>
+          {loading
+            ? Array.from({ length: 5 }).map((_, i) => (
+                <tr key={i} className="border-b">
+                  <td className="px-3 py-3" />
+                  {Array.from({ length: 6 }).map((_, j) => (
+                    <td key={j} className="px-4 py-3">
+                      <Skeleton className="h-4 w-full" />
+                    </td>
+                  ))}
+                </tr>
+              ))
+            : rows.map((row) => (
+                <ProductRows
+                  key={row.productId}
+                  row={row}
+                  isExpanded={expanded.has(row.productId)}
+                  onToggle={() => onToggle(row.productId)}
+                />
+              ))}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
+function ProductRows({
+  row,
+  isExpanded,
+  onToggle,
+}: {
+  row: SalesReportRow
+  isExpanded: boolean
+  onToggle: () => void
+}) {
+  const hasVariants = row.variants.length > 0
+  const displayStock = hasVariants
+    ? row.variants.reduce((sum, v) => sum + v.currentStock, 0)
+    : row.currentStock
+
+  return (
+    <>
+      <tr
+        className={cn(
+          'border-b transition-colors',
+          hasVariants && 'cursor-pointer hover:bg-muted/40',
+          isExpanded && 'bg-muted/20',
+        )}
+        onClick={hasVariants ? onToggle : undefined}
+      >
+        <td className="px-3 py-3 text-center text-muted-foreground">
+          {hasVariants &&
+            (isExpanded ? (
+              <ChevronDown className="mx-auto size-4" />
+            ) : (
+              <ChevronRight className="mx-auto size-4" />
+            ))}
+        </td>
+        <td className="px-4 py-3 font-medium">{row.brandName}</td>
+        <td className="px-4 py-3">{row.productName}</td>
+        <td className="px-4 py-3 text-right tabular-nums">{displayStock}</td>
+        <td className="px-4 py-3 text-right tabular-nums">{row.totalQuantity}</td>
+        <td className="px-4 py-3 text-right">
+          <Money value={row.totalRevenue} />
+        </td>
+        <td className="px-4 py-3 text-right tabular-nums text-muted-foreground">
+          {row.salesCount}
+        </td>
+      </tr>
+
+      {isExpanded &&
+        row.variants.map((v) => (
+          <VariantRow key={v.variantId} variant={v} />
+        ))}
+    </>
+  )
+}
+
+function VariantRow({ variant }: { variant: SalesReportVariantRow }) {
+  return (
+    <tr className="border-b bg-muted/10 text-muted-foreground">
+      <td className="px-3 py-2" />
+      <td className="px-4 py-2" />
+      <td className="px-4 py-2">
+        <span className="flex items-center gap-1.5">
+          <span className="text-border select-none">↳</span>
+          <span className="text-foreground">{variant.variantName}</span>
+        </span>
+      </td>
+      <td
+        className={cn(
+          'px-4 py-2 text-right tabular-nums',
+          variant.currentStock === 0
+            ? 'text-destructive'
+            : variant.currentStock <= 3
+              ? 'text-orange-500'
+              : '',
+        )}
+      >
+        {variant.currentStock}
+      </td>
+      <td className="px-4 py-2 text-right tabular-nums">{variant.totalQuantity}</td>
+      <td className="px-4 py-2 text-right">
+        <Money value={variant.totalRevenue} />
+      </td>
+      <td className="px-4 py-2 text-right tabular-nums">{variant.salesCount}</td>
+    </tr>
   )
 }
 
