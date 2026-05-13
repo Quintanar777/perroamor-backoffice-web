@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
 import {
   itemKey,
+  selectIsWholesale,
   useCartStore,
   type CartItem,
 } from '@/features/sales/store'
@@ -16,12 +17,15 @@ function ItemRow({ item }: { item: CartItem }) {
   const updateQty = useCartStore((s) => s.updateQty)
   const updateUnitPrice = useCartStore((s) => s.updateUnitPrice)
   const removeItem = useCartStore((s) => s.removeItem)
+  const isWholesale = useCartStore(selectIsWholesale)
   const key = itemKey(item)
   const lineTotal = item.unitPrice * item.quantity
 
   const isCombo = item.kind === 'combo'
   const title = isCombo ? item.comboName : item.productName
-  const priceEdited = item.unitPrice !== item.originalPrice
+  const expectedPrice =
+    !isCombo && isWholesale ? item.wholesalePrice : item.originalPrice
+  const priceEdited = item.unitPrice !== expectedPrice
 
   const [priceDraft, setPriceDraft] = useState(item.unitPrice.toString())
 

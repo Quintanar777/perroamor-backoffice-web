@@ -76,6 +76,17 @@ export function useUpdateProduct() {
   })
 }
 
+export function usePatchStock() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ id, setTo }: { id: number; setTo: number }) =>
+      productsApi.patchStock(id, setTo),
+    onSuccess: () => {
+      invalidateProducts(qc)
+    },
+  })
+}
+
 export function useDeleteProduct() {
   const qc = useQueryClient()
   return useMutation({

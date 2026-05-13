@@ -21,10 +21,12 @@ import { ProductFormDialog } from '@/features/catalog/components/ProductFormDial
 import { useBrandsQuery } from '@/features/catalog/hooks/useBrands'
 import {
   useDeleteProduct,
+  usePatchStock,
   useProductCategoriesQuery,
   useProductsQuery,
   useUpdateProduct,
 } from '@/features/catalog/hooks/useProducts'
+import { formatMoney } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 import { ApiError, NetworkError } from '@/lib/types/api'
 import type { Product } from '@/lib/types/catalog'
@@ -58,6 +60,7 @@ export default function ProductsPage() {
   const categoriesQuery = useProductCategoriesQuery()
   const deleteProduct = useDeleteProduct()
   const updateProduct = useUpdateProduct()
+  const patchStock = usePatchStock()
 
   const [editing, setEditing] = useState<Product | null>(null)
   const [creating, setCreating] = useState(false)
@@ -113,22 +116,38 @@ export default function ProductsPage() {
     if (!isDirty(p) || saving.has(p.id)) return
     const e = edits.get(p.id) ?? {}
     setSaving((prev) => new Set(prev).add(p.id))
+
+    const stockChanged = e.stock !== undefined && e.stock !== p.stock
+    const metaChanged =
+      (e.price !== undefined && e.price !== p.price) ||
+      (e.wholesalePrice !== undefined && e.wholesalePrice !== p.wholesalePrice)
+
     try {
-      await updateProduct.mutateAsync({
-        id: p.id,
-        body: {
-          name: p.name,
-          brandId: p.brandId,
-          category: p.category,
-          description: p.description,
-          price: e.price ?? p.price,
-          wholesalePrice: e.wholesalePrice ?? p.wholesalePrice,
-          stock: e.stock ?? p.stock,
-          canBePersonalized: p.canBePersonalized,
-          hasVariants: p.hasVariants,
-          isActive: p.isActive,
-        },
-      })
+      await Promise.all([
+        metaChanged
+          ? updateProduct.mutateAsync({
+              id: p.id,
+              body: {
+                name: p.name,
+                brandId: p.brandId,
+                category: p.category,
+                description: p.description,
+                price: e.price ?? p.price,
+                wholesalePrice: e.wholesalePrice ?? p.wholesalePrice,
+                stock: p.stock,
+                canBePersonalized: p.canBePersonalized,
+                hasVariants: p.hasVariants,
+                isActive: p.isActive,
+              },
+            })
+          : Promise.resolve(),
+        stockChanged
+          ? patchStock.mutateAsync({ id: p.id, setTo: e.stock! })
+          : Promise.resolve(),
+      ])
+      if (!metaChanged && stockChanged) {
+        toast.success('Stock actualizado', { description: p.name })
+      }
       discard(p.id)
     } catch (err) {
       if (err instanceof NetworkError) {
@@ -196,40 +215,52 @@ export default function ProductsPage() {
       header: <span className="block text-right">Precio</span>,
       headerClassName: 'w-28 text-right',
       className: 'text-right',
-      cell: (p) => (
-        <Input
-          type="number"
-          min={0}
-          step={0.01}
-          value={getVal(p, 'price')}
-          onChange={(e) => {
-            const n = e.target.valueAsNumber
-            if (!isNaN(n)) setField(p.id, { price: n })
-          }}
-          onKeyDown={handleKeyDown(p)}
-          className="h-7 w-full text-right tabular-nums"
-        />
-      ),
+      cell: (p) =>
+        p.hasVariants ? (
+          <span className="text-muted-foreground tabular-nums text-sm">
+            {formatMoney(p.price)}{' '}
+            <span className="text-xs">base</span>
+          </span>
+        ) : (
+          <Input
+            type="number"
+            min={0}
+            step={0.01}
+            value={getVal(p, 'price')}
+            onChange={(e) => {
+              const n = e.target.valueAsNumber
+              if (!isNaN(n)) setField(p.id, { price: n })
+            }}
+            onKeyDown={handleKeyDown(p)}
+            className="h-7 w-full text-right tabular-nums"
+          />
+        ),
     },
     {
       key: 'wholesalePrice',
       header: <span className="block text-right">Mayoreo</span>,
       headerClassName: 'w-28 text-right',
       className: 'text-right',
-      cell: (p) => (
-        <Input
-          type="number"
-          min={0}
-          step={0.01}
-          value={getVal(p, 'wholesalePrice')}
-          onChange={(e) => {
-            const n = e.target.valueAsNumber
-            if (!isNaN(n)) setField(p.id, { wholesalePrice: n })
-          }}
-          onKeyDown={handleKeyDown(p)}
-          className="h-7 w-full text-right tabular-nums"
-        />
-      ),
+      cell: (p) =>
+        p.hasVariants ? (
+          <span className="text-muted-foreground tabular-nums text-sm">
+            {formatMoney(p.wholesalePrice)}{' '}
+            <span className="text-xs">base</span>
+          </span>
+        ) : (
+          <Input
+            type="number"
+            min={0}
+            step={0.01}
+            value={getVal(p, 'wholesalePrice')}
+            onChange={(e) => {
+              const n = e.target.valueAsNumber
+              if (!isNaN(n)) setField(p.id, { wholesalePrice: n })
+            }}
+            onKeyDown={handleKeyDown(p)}
+            className="h-7 w-full text-right tabular-nums"
+          />
+        ),
     },
     {
       key: 'stock',

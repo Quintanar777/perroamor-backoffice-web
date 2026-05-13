@@ -33,6 +33,7 @@ import {
 import { useBrandsQuery } from '@/features/catalog/hooks/useBrands'
 import {
   useCreateProduct,
+  usePatchStock,
   useUpdateProduct,
 } from '@/features/catalog/hooks/useProducts'
 import {
@@ -78,8 +79,9 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
   const isEdit = product !== null
   const create = useCreateProduct()
   const update = useUpdateProduct()
+  const patchStock = usePatchStock()
   const brandsQuery = useBrandsQuery()
-  const pending = create.isPending || update.isPending
+  const pending = create.isPending || update.isPending || patchStock.isPending
 
   const form = useForm<ProductFormInput>({
     resolver: zodResolver(productSchema),
@@ -123,6 +125,9 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
     try {
       if (product) {
         await update.mutateAsync({ id: product.id, body })
+        if (Number(values.stock) !== product.stock) {
+          await patchStock.mutateAsync({ id: product.id, setTo: Number(values.stock) })
+        }
       } else {
         await create.mutateAsync(body)
       }

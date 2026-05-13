@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton'
 import { Textarea } from '@/components/ui/textarea'
 import { useVariantsQuery } from '@/features/catalog/hooks/useVariants'
 import {
+  selectIsWholesale,
   useCartStore,
   type ProductCartItem,
 } from '@/features/sales/store'
@@ -53,6 +54,7 @@ function ConfigBody({
   onClose: () => void
 }) {
   const addItem = useCartStore((s) => s.addItem)
+  const isWholesale = useCartStore(selectIsWholesale)
   const variantsQuery = useVariantsQuery(product.hasVariants ? product.id : 0)
 
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null)
@@ -83,15 +85,17 @@ function ConfigBody({
     needsPersonalization && (!needsVariant || selectedVariant !== null)
 
   const buildItem = (variant: ProductVariant | null, qty = 1): ProductCartItem => {
-    const price = product.price + (variant?.priceAdjustment ?? 0)
+    const retailPrice = product.price + (variant?.priceAdjustment ?? 0)
+    const wholesalePrice = product.wholesalePrice + (variant?.priceAdjustment ?? 0)
     return {
       kind: 'product',
       productId: product.id,
       variantId: variant?.id ?? null,
       productName: product.name,
       variantName: variant?.variantName ?? null,
-      unitPrice: price,
-      originalPrice: price,
+      unitPrice: isWholesale ? wholesalePrice : retailPrice,
+      originalPrice: retailPrice,
+      wholesalePrice,
       personalization: personalization.trim() || null,
       quantity: qty,
       maxStock: variant ? variant.stock : product.stock,

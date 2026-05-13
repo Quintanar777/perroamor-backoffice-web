@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
 import { Separator } from '@/components/ui/separator'
 import {
   Sheet,
@@ -34,6 +35,7 @@ import { useCreateSale } from '@/features/sales/hooks/useCreateSale'
 import {
   selectCartCount,
   selectCartTotal,
+  selectIsWholesale,
   useCartStore,
   type CartItem,
 } from '@/features/sales/store'
@@ -85,8 +87,10 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
   const items = useCartStore((s) => s.items)
   const cartCount = useCartStore(selectCartCount)
   const cartTotal = useCartStore(selectCartTotal)
+  const isWholesale = useCartStore(selectIsWholesale)
   const clearCart = useCartStore((s) => s.clear)
   const addItem = useCartStore((s) => s.addItem)
+  const setWholesale = useCartStore((s) => s.setWholesale)
 
   const productQuantities = useMemo(() => {
     const map = new Map<number, number>()
@@ -143,8 +147,9 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       variantId: null,
       productName: product.name,
       variantName: null,
-      unitPrice: product.price,
+      unitPrice: isWholesale ? product.wholesalePrice : product.price,
       originalPrice: product.price,
+      wholesalePrice: product.wholesalePrice,
       personalization: null,
       quantity: 1,
       maxStock: product.stock,
@@ -311,6 +316,16 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
                 <Badge variant="secondary">{cartCount}</Badge>
               )}
             </SheetTitle>
+            <div className="flex items-center gap-2 pt-1">
+              <Switch
+                id="wholesale-toggle"
+                checked={isWholesale}
+                onCheckedChange={setWholesale}
+              />
+              <Label htmlFor="wholesale-toggle" className="text-sm font-normal cursor-pointer">
+                Precio mayoreo
+              </Label>
+            </div>
           </SheetHeader>
 
           <Tabs

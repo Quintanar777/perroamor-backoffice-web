@@ -1,4 +1,4 @@
-import { apiDelete, apiGet, apiPost, apiPut } from '@/lib/api/client'
+import { apiDelete, apiGet, apiPatch, apiPost, apiPut } from '@/lib/api/client'
 import type { PagedResponse } from '@/lib/types/api'
 import type {
   Brand,
@@ -32,6 +32,8 @@ export const productsApi = {
   update: (id: number, body: ProductInput): Promise<Product> =>
     apiPut<Product>(`/products/${id}`, body),
   remove: (id: number): Promise<void> => apiDelete<void>(`/products/${id}`),
+  patchStock: (id: number, setTo: number): Promise<Product> =>
+    apiPatch<Product>(`/products/${id}/stock`, { delta: 0, setTo }),
 }
 
 export const variantsApi = {

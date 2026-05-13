@@ -7,7 +7,8 @@ export interface ProductCartItem {
   productName: string
   variantName: string | null
   unitPrice: number
-  originalPrice: number
+  originalPrice: number   // retail effective price — never changes
+  wholesalePrice: number  // wholesale effective price — never changes
   personalization: string | null
   quantity: number
   maxStock: number
@@ -39,6 +40,7 @@ export const itemKey = (item: CartItem): string => {
 
 interface CartState {
   items: CartItem[]
+  isWholesale: boolean
 }
 
 interface CartActions {
@@ -47,6 +49,7 @@ interface CartActions {
   updateUnitPrice: (key: string, price: number) => void
   removeItem: (key: string) => void
   clear: () => void
+  setWholesale: (v: boolean) => void
 }
 
 const clampQty = (qty: number, max: number): number => {
@@ -57,6 +60,7 @@ const clampQty = (qty: number, max: number): number => {
 
 export const useCartStore = create<CartState & CartActions>((set) => ({
   items: [],
+  isWholesale: false,
   addItem: (incoming) =>
     set((state) => {
       const key = itemKey(incoming)
@@ -107,6 +111,14 @@ export const useCartStore = create<CartState & CartActions>((set) => ({
       items: state.items.filter((it) => itemKey(it) !== key),
     })),
   clear: () => set({ items: [] }),
+  setWholesale: (v) =>
+    set((state) => ({
+      isWholesale: v,
+      items: state.items.map((it) => {
+        if (it.kind !== 'product') return it
+        return { ...it, unitPrice: v ? it.wholesalePrice : it.originalPrice }
+      }) as CartItem[],
+    })),
 }))
 
 export const selectCartTotal = (state: CartState): number =>
@@ -134,3 +146,5 @@ export const selectQuantityForCombo =
         it.kind === 'combo' && it.comboId === comboId ? acc + it.quantity : acc,
       0,
     )
+
+export const selectIsWholesale = (state: CartState): boolean => state.isWholesale
