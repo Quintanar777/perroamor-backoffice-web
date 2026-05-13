@@ -50,6 +50,7 @@ export default function ProductsPage() {
   const filters = {
     page,
     size: PAGE_SIZE,
+    isActive: true,
     brandId: brandId === ALL ? undefined : Number(brandId),
     category: category === ALL ? undefined : category,
     q: search.trim().length > 0 ? search.trim() : undefined,
