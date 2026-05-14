@@ -2,15 +2,23 @@ import { Fragment, useState } from 'react'
 import {
   ChevronDown,
   ChevronRight,
+  Copy,
   Pencil,
   Plus,
   Search,
   Trash2,
 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
-import { BrandBadge } from '@/components/shared/BrandBadge'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import {
   Select,
   SelectContent,
@@ -28,6 +36,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
+import { BrandBadge } from '@/components/shared/BrandBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Money } from '@/components/shared/Money'
@@ -35,7 +44,11 @@ import { PageHeader } from '@/components/shared/PageHeader'
 import { Pagination } from '@/components/shared/Pagination'
 import { ComboFormDialog } from '@/features/catalog/components/ComboFormDialog'
 import { useBrandsQuery } from '@/features/catalog/hooks/useBrands'
-import { useCombosQuery, useDeleteCombo } from '@/features/catalog/hooks/useCombos'
+import {
+  useCloneCombo,
+  useCombosQuery,
+  useDeleteCombo,
+} from '@/features/catalog/hooks/useCombos'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 import { cn } from '@/lib/utils'
 import type { Combo, ComboItem } from '@/lib/types/catalog'
@@ -103,10 +116,13 @@ export default function CombosPage() {
   const combosQuery = useCombosQuery(filters)
   const brandsQuery = useBrandsQuery()
   const deleteCombo = useDeleteCombo()
+  const cloneCombo = useCloneCombo()
 
   const [editing, setEditing] = useState<Combo | null>(null)
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<Combo | null>(null)
+  const [cloning, setCloning] = useState<Combo | null>(null)
+  const [cloneName, setCloneName] = useState('')
   const [expandedId, setExpandedId] = useState<number | null>(null)
 
   const formOpen = creating || editing !== null
@@ -116,6 +132,21 @@ export default function CombosPage() {
   }
 
   const resetPage = () => setPage(0)
+
+  const openClone = (combo: Combo) => {
+    setCloneName(`${combo.name} (copia)`)
+    setCloning(combo)
+  }
+
+  const handleClone = async () => {
+    if (!cloning || cloneName.trim().length === 0) return
+    try {
+      await cloneCombo.mutateAsync({ combo: cloning, name: cloneName.trim() })
+      setCloning(null)
+    } catch {
+      // toast handled in hook
+    }
+  }
 
   const handleDelete = async () => {
     if (!deleting) return
@@ -311,6 +342,14 @@ export default function CombosPage() {
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                aria-label={`Clonar ${c.name}`}
+                                onClick={() => openClone(c)}
+                              >
+                                <Copy className="size-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
                                 aria-label={`Editar ${c.name}`}
                                 onClick={() => setEditing(c)}
                               >
@@ -368,6 +407,43 @@ export default function CombosPage() {
         loading={deleteCombo.isPending}
         onConfirm={handleDelete}
       />
+
+      <Dialog
+        open={cloning !== null}
+        onOpenChange={(open) => !open && setCloning(null)}
+      >
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Clonar combo</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-2 py-2">
+            <Label htmlFor="clone-name">Nombre del nuevo combo</Label>
+            <Input
+              id="clone-name"
+              value={cloneName}
+              onChange={(e) => setCloneName(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') {
+                  e.preventDefault()
+                  void handleClone()
+                }
+              }}
+              autoFocus
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCloning(null)}>
+              Cancelar
+            </Button>
+            <Button
+              onClick={handleClone}
+              disabled={cloneName.trim().length === 0 || cloneCombo.isPending}
+            >
+              {cloneCombo.isPending ? 'Clonando…' : 'Clonar'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

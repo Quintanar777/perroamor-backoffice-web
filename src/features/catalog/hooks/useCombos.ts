@@ -12,6 +12,8 @@ import type {
   ComboInput,
 } from '@/lib/types/catalog'
 
+export type CloneComboParams = { combo: Combo; name: string }
+
 export function useCombosQuery(filters: ComboFilters) {
   return useQuery({
     queryKey: catalogKeys.combos(filters),
@@ -63,6 +65,30 @@ export function useUpdateCombo() {
     onSuccess: (combo) => {
       invalidateCombos(qc)
       toast.success('Combo actualizado', { description: combo.name })
+    },
+  })
+}
+
+export function useCloneCombo() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: ({ combo, name }: CloneComboParams) =>
+      combosApi.create({
+        name,
+        description: combo.description,
+        brandId: combo.brandId,
+        price: combo.price,
+        wholesalePrice: combo.wholesalePrice,
+        isActive: true,
+        items: combo.items.map((it) => ({
+          productId: it.productId,
+          variantId: it.variantId,
+          quantity: it.quantity,
+        })),
+      }),
+    onSuccess: (combo) => {
+      invalidateCombos(qc)
+      toast.success('Combo clonado', { description: combo.name })
     },
   })
 }
