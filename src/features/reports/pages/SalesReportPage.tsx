@@ -17,6 +17,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { Money } from '@/components/shared/Money'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { useBrandsQuery } from '@/features/catalog/hooks/useBrands'
+import { useEventsQuery } from '@/features/events/hooks/useEvents'
 import { useSalesReportQuery } from '@/features/reports/hooks/useSalesReport'
 import { catalogKeys, productsApi } from '@/lib/api/catalog'
 import { downloadSalesReportCsv } from '@/lib/api/reports'
@@ -38,6 +39,7 @@ const toDateTimeEnd = (date: string) =>
   date.length > 0 ? `${date}T23:59:59` : undefined
 
 export default function SalesReportPage() {
+  const [eventId, setEventId] = useState<string>(ALL)
   const [brandId, setBrandId] = useState<string>(ALL)
   const [productId, setProductId] = useState<string>(ALL)
   const [paymentMethod, setPaymentMethod] = useState<string>(ALL)
@@ -46,6 +48,7 @@ export default function SalesReportPage() {
   const [isExporting, setIsExporting] = useState(false)
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
 
+  const eventsQuery = useEventsQuery({ size: 100 })
   const brandsQuery = useBrandsQuery()
   const productsQuery = useQuery({
     queryKey: catalogKeys.products({ brandId: Number(brandId), size: 200 }),
@@ -55,6 +58,7 @@ export default function SalesReportPage() {
   })
 
   const filters: SalesReportFilters = {
+    eventId: eventId !== ALL ? Number(eventId) : undefined,
     brandId: brandId !== ALL ? Number(brandId) : undefined,
     productId: productId !== ALL ? Number(productId) : undefined,
     paymentMethod: paymentMethod !== ALL ? (paymentMethod as PaymentMethod) : undefined,
@@ -70,6 +74,7 @@ export default function SalesReportPage() {
   }
 
   const handleReset = () => {
+    setEventId(ALL)
     setBrandId(ALL)
     setProductId(ALL)
     setPaymentMethod(ALL)
@@ -78,6 +83,7 @@ export default function SalesReportPage() {
   }
 
   const hasFilters =
+    eventId !== ALL ||
     brandId !== ALL ||
     productId !== ALL ||
     paymentMethod !== ALL ||
@@ -122,7 +128,7 @@ export default function SalesReportPage() {
     <div className="space-y-6">
       <PageHeader
         title="Reporte de Ventas"
-        description="Analiza las ventas por marca, producto y método de pago."
+        description="Analiza las ventas por evento, marca, producto y método de pago."
         actions={
           <Button
             variant="outline"
@@ -137,6 +143,23 @@ export default function SalesReportPage() {
 
       {/* Filters */}
       <div className="space-y-3">
+        {/* Evento — filtro principal */}
+        <Select value={eventId} onValueChange={setEventId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Todos los eventos" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL}>Todos los eventos</SelectItem>
+            {(eventsQuery.data?.content ?? []).map((e) => (
+              <SelectItem key={e.id} value={String(e.id)}>
+                {e.name}
+                {e.location ? ` — ${e.location}` : ''}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+
+        {/* Filtros secundarios */}
         <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
           <Select value={brandId} onValueChange={handleBrandChange}>
             <SelectTrigger>

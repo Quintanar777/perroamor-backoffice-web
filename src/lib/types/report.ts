@@ -33,6 +33,7 @@ export interface SalesReport {
 }
 
 export interface SalesReportFilters {
+  eventId?: number
   brandId?: number
   productId?: number
   paymentMethod?: PaymentMethod
