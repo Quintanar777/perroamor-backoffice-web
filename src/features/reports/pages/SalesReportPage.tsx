@@ -209,6 +209,7 @@ export default function SalesReportPage() {
               <SelectItem value={ALL}>Todos los métodos</SelectItem>
               <SelectItem value="CASH">{PAYMENT_METHOD_LABEL.CASH}</SelectItem>
               <SelectItem value="CARD">{PAYMENT_METHOD_LABEL.CARD}</SelectItem>
+              <SelectItem value="MP_NATHALY">{PAYMENT_METHOD_LABEL.MP_NATHALY}</SelectItem>
               <SelectItem value="TRANSFER">{PAYMENT_METHOD_LABEL.TRANSFER}</SelectItem>
             </SelectContent>
           </Select>

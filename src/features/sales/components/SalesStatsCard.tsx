@@ -1,4 +1,4 @@
-import { Banknote, CreditCard, Wallet } from 'lucide-react'
+import { Banknote, CreditCard, Smartphone, Wallet } from 'lucide-react'
 import {
   Card,
   CardContent,
@@ -22,6 +22,7 @@ const ICONS: Record<PaymentMethod, typeof Banknote> = {
   CASH: Banknote,
   CARD: CreditCard,
   TRANSFER: Wallet,
+  MP_NATHALY: Smartphone,
 }
 
 export function SalesStatsCard({ eventId }: Props) {

@@ -1,4 +1,4 @@
-export type PaymentMethod = 'CASH' | 'CARD' | 'TRANSFER'
+export type PaymentMethod = 'CASH' | 'CARD' | 'TRANSFER' | 'MP_NATHALY'
 
 export interface SaleItem {
   id: number
@@ -90,4 +90,5 @@ export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
   CASH: 'Efectivo',
   CARD: 'Tarjeta',
   TRANSFER: 'Transferencia',
+  MP_NATHALY: 'MP Nathaly',
 }

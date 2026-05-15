@@ -1,5 +1,5 @@
 import { Fragment, useEffect, useState } from 'react'
-import { Banknote, ChevronDown, ChevronRight, CreditCard, Eye, Wallet } from 'lucide-react'
+import { Banknote, ChevronDown, ChevronRight, CreditCard, Eye, Smartphone, Wallet } from 'lucide-react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import {
@@ -48,6 +48,7 @@ type CancelFilter = 'all' | 'active' | 'cancelled'
 const METHOD_ICONS: Record<PaymentMethod, typeof Banknote> = {
   CASH: Banknote,
   CARD: CreditCard,
+  MP_NATHALY: Smartphone,
   TRANSFER: Wallet,
 }
 
@@ -251,7 +252,8 @@ export default function SalesPage() {
           <SelectContent>
             <SelectItem value={ALL}>Todos los métodos</SelectItem>
             <SelectItem value="CASH">Efectivo</SelectItem>
-            <SelectItem value="CARD">Tarjeta</SelectItem>
+            <SelectItem value="CARD">Tarjeta (Terminal)</SelectItem>
+            <SelectItem value="MP_NATHALY">MP Nathaly</SelectItem>
             <SelectItem value="TRANSFER">Transferencia</SelectItem>
           </SelectContent>
         </Select>

@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Banknote, CreditCard, Plus, Wallet, X } from 'lucide-react'
+import { Banknote, CreditCard, Plus, Smartphone, Wallet, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -22,6 +22,13 @@ interface Props {
   disabled?: boolean
 }
 
+// Which main tab to show as active for a given method
+const mainTab = (method: PaymentMethod): 'CASH' | 'CARD' | 'TRANSFER' => {
+  if (method === 'CARD' || method === 'MP_NATHALY') return 'CARD'
+  if (method === 'TRANSFER') return 'TRANSFER'
+  return 'CASH'
+}
+
 export function PaymentSection({
   method,
   onMethodChange,
@@ -40,14 +47,26 @@ export function PaymentSection({
     Number.isFinite(received)
   const insufficient = showChange && change < 0
 
+  const handleMainTab = (tab: string | undefined) => {
+    if (!tab) return
+    if (tab === 'CARD') {
+      // Default to Terminal when switching to the card tab
+      onMethodChange('CARD')
+    } else {
+      onMethodChange(tab as PaymentMethod)
+    }
+  }
+
   return (
     <div className="space-y-3">
       <div className="space-y-2">
         <Label>Método de pago</Label>
+
+        {/* Primary row */}
         <ToggleGroup
           type="single"
-          value={method}
-          onValueChange={(v) => v && onMethodChange(v as PaymentMethod)}
+          value={mainTab(method)}
+          onValueChange={handleMainTab}
           variant="outline"
           className="w-full"
           disabled={disabled}
@@ -65,6 +84,27 @@ export function PaymentSection({
             Transfer.
           </ToggleGroupItem>
         </ToggleGroup>
+
+        {/* Card sub-selector */}
+        {mainTab(method) === 'CARD' && (
+          <ToggleGroup
+            type="single"
+            value={method}
+            onValueChange={(v) => v && onMethodChange(v as PaymentMethod)}
+            variant="outline"
+            className="w-full"
+            disabled={disabled}
+          >
+            <ToggleGroupItem value="CARD" className="h-10 flex-1 gap-2 text-sm">
+              <CreditCard className="size-3.5" />
+              Terminal
+            </ToggleGroupItem>
+            <ToggleGroupItem value="MP_NATHALY" className="h-10 flex-1 gap-2 text-sm">
+              <Smartphone className="size-3.5" />
+              MP Nathaly
+            </ToggleGroupItem>
+          </ToggleGroup>
+        )}
       </div>
 
       {method === 'CASH' && (
