@@ -12,6 +12,7 @@ export function useCreateSale() {
       qc.invalidateQueries({ queryKey: ['catalog', 'products'] })
       qc.invalidateQueries({ queryKey: ['catalog', 'combos'] })
       qc.invalidateQueries({ queryKey: ['catalog', 'all-products'] })
+      qc.invalidateQueries({ queryKey: ['catalog', 'variants'] })
       qc.invalidateQueries({ queryKey: ['sales'] })
     },
     onError: (error) => {
