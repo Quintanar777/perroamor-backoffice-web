@@ -25,7 +25,7 @@ const ICONS: Record<PaymentMethod, typeof Banknote> = {
 }
 
 export function SalesStatsCard({ eventId }: Props) {
-  const statsQuery = useSaleStatsQuery(eventId)
+  const statsQuery = useSaleStatsQuery({ eventId })
 
   if (statsQuery.isLoading) {
     return (

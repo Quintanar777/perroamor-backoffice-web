@@ -5,6 +5,7 @@ import type {
   SaleFilters,
   SaleInput,
   SaleStats,
+  SaleStatsFilters,
 } from '@/lib/types/sale'
 
 export const salesApi = {
@@ -15,12 +16,12 @@ export const salesApi = {
   get: (id: number): Promise<Sale> => apiGet<Sale>(`/sales/${id}`),
   create: (body: SaleInput): Promise<Sale> => apiPost<Sale>('/sales', body),
   cancel: (id: number): Promise<Sale> => apiPatch<Sale>(`/sales/${id}/cancel`),
-  stats: (eventId: number): Promise<SaleStats> =>
-    apiGet<SaleStats>('/sales/stats', { query: { eventId } }),
+  stats: (filters: SaleStatsFilters): Promise<SaleStats> =>
+    apiGet<SaleStats>('/sales/stats', { query: filters as unknown as Record<string, unknown> }),
 }
 
 export const salesKeys = {
   list: (filters: SaleFilters = {}) => ['sales', 'list', filters] as const,
   detail: (id: number) => ['sales', 'detail', id] as const,
-  stats: (eventId: number) => ['sales', 'stats', eventId] as const,
+  stats: (filters: SaleStatsFilters) => ['sales', 'stats', filters] as const,
 }

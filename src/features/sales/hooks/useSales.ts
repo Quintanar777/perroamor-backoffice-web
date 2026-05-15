@@ -7,7 +7,7 @@ import {
 import { toast } from 'sonner'
 import { salesApi, salesKeys } from '@/lib/api/sales'
 import { ApiError, NetworkError } from '@/lib/types/api'
-import type { Sale, SaleFilters } from '@/lib/types/sale'
+import type { Sale, SaleFilters, SaleStatsFilters } from '@/lib/types/sale'
 
 export function useSalesQuery(filters: SaleFilters) {
   return useQuery({
@@ -25,11 +25,11 @@ export function useSaleQuery(id: number) {
   })
 }
 
-export function useSaleStatsQuery(eventId: number | null | undefined) {
+export function useSaleStatsQuery(filters: SaleStatsFilters | null | undefined) {
   return useQuery({
-    queryKey: eventId ? salesKeys.stats(eventId) : ['sales', 'stats', 'noop'],
-    queryFn: () => salesApi.stats(eventId as number),
-    enabled: typeof eventId === 'number' && eventId > 0,
+    queryKey: filters ? salesKeys.stats(filters) : ['sales', 'stats', 'noop'],
+    queryFn: () => salesApi.stats(filters!),
+    enabled: !!filters && typeof filters.eventId === 'number' && filters.eventId > 0,
     staleTime: 30_000,
   })
 }

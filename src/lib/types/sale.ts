@@ -61,9 +61,16 @@ export interface SaleFilters {
   size?: number
   eventId?: number
   paymentMethod?: PaymentMethod
-  isCancelled?: boolean
-  startDate?: string
-  endDate?: string
+  isCancelled?: boolean    // null/omit=all, false=only active, true=only cancelled
+  from?: string            // ISO datetime e.g. 2025-05-14T00:00:00
+  to?: string
+}
+
+export interface SaleStatsFilters {
+  eventId: number
+  from?: string
+  to?: string
+  paymentMethod?: PaymentMethod
 }
 
 export interface PaymentMethodStat {
