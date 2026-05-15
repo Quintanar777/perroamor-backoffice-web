@@ -29,6 +29,21 @@ const mainTab = (method: PaymentMethod): 'CASH' | 'CARD' | 'TRANSFER' => {
   return 'CASH'
 }
 
+const MAIN_SELECTED: Record<'CASH' | 'CARD' | 'TRANSFER', string> = {
+  CASH:     'data-[state=on]:bg-emerald-500 data-[state=on]:text-white data-[state=on]:border-emerald-500',
+  CARD:     'data-[state=on]:bg-blue-500    data-[state=on]:text-white data-[state=on]:border-blue-500',
+  TRANSFER: 'data-[state=on]:bg-violet-500  data-[state=on]:text-white data-[state=on]:border-violet-500',
+}
+
+const SUB_SELECTED = 'data-[state=on]:bg-blue-500 data-[state=on]:text-white data-[state=on]:border-blue-500'
+
+export const PAYMENT_METHOD_COLOR: Record<PaymentMethod, string> = {
+  CASH:       'bg-emerald-500',
+  CARD:       'bg-blue-500',
+  MP_NATHALY: 'bg-blue-500',
+  TRANSFER:   'bg-violet-500',
+}
+
 export function PaymentSection({
   method,
   onMethodChange,
@@ -71,15 +86,15 @@ export function PaymentSection({
           className="w-full"
           disabled={disabled}
         >
-          <ToggleGroupItem value="CASH" className="h-12 flex-1 gap-2">
+          <ToggleGroupItem value="CASH" className={cn('h-12 flex-1 gap-2', MAIN_SELECTED.CASH)}>
             <Banknote className="size-4" />
             Efectivo
           </ToggleGroupItem>
-          <ToggleGroupItem value="CARD" className="h-12 flex-1 gap-2">
+          <ToggleGroupItem value="CARD" className={cn('h-12 flex-1 gap-2', MAIN_SELECTED.CARD)}>
             <CreditCard className="size-4" />
             Tarjeta
           </ToggleGroupItem>
-          <ToggleGroupItem value="TRANSFER" className="h-12 flex-1 gap-2">
+          <ToggleGroupItem value="TRANSFER" className={cn('h-12 flex-1 gap-2', MAIN_SELECTED.TRANSFER)}>
             <Wallet className="size-4" />
             Transfer.
           </ToggleGroupItem>
@@ -95,11 +110,11 @@ export function PaymentSection({
             className="w-full"
             disabled={disabled}
           >
-            <ToggleGroupItem value="CARD" className="h-10 flex-1 gap-2 text-sm">
+            <ToggleGroupItem value="CARD" className={cn('h-10 flex-1 gap-2 text-sm', SUB_SELECTED)}>
               <CreditCard className="size-3.5" />
               Terminal
             </ToggleGroupItem>
-            <ToggleGroupItem value="MP_NATHALY" className="h-10 flex-1 gap-2 text-sm">
+            <ToggleGroupItem value="MP_NATHALY" className={cn('h-10 flex-1 gap-2 text-sm', SUB_SELECTED)}>
               <Smartphone className="size-3.5" />
               MP Nathaly
             </ToggleGroupItem>

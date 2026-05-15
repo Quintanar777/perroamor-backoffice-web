@@ -26,7 +26,7 @@ import { ComboCard } from '@/features/sales/components/ComboCard'
 import { CartItemsList } from '@/features/sales/components/CartItemsList'
 import { EventBanner } from '@/features/sales/components/EventBanner'
 import { NoEventBlocker } from '@/features/sales/components/NoEventBlocker'
-import { PaymentSection } from '@/features/sales/components/PaymentSection'
+import { PaymentSection, PAYMENT_METHOD_COLOR } from '@/features/sales/components/PaymentSection'
 import { ProductCard } from '@/features/sales/components/ProductCard'
 import { ProductConfigSheet } from '@/features/sales/components/ProductConfigSheet'
 import { SalesBottomBar } from '@/features/sales/components/SalesBottomBar'
@@ -233,6 +233,8 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       setAmountReceived('')
       setCustomerName('')
       setDiscountInput('')
+      setPaymentMethod('CASH')
+      setSearchInput('')
       setCartOpen(false)
       setCartTab('items')
     } catch {
@@ -353,8 +355,9 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
               <TabsTrigger value="items" className="text-base">
                 Items
               </TabsTrigger>
-              <TabsTrigger value="payment" className="text-base">
+              <TabsTrigger value="payment" className="gap-2 text-base">
                 Pago
+                <span className={`size-2.5 rounded-full ${PAYMENT_METHOD_COLOR[paymentMethod]}`} />
               </TabsTrigger>
             </TabsList>
 
