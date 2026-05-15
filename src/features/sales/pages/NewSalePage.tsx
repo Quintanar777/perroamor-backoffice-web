@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react'
-import { Loader2, ShoppingCart } from 'lucide-react'
+import { Loader2, ShoppingCart, Trash2 } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -312,9 +312,22 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
                 <ShoppingCart className="size-5" />
                 Carrito
               </span>
-              {cartCount > 0 && (
-                <Badge variant="secondary">{cartCount}</Badge>
-              )}
+              <span className="flex items-center gap-2">
+                {cartCount > 0 && (
+                  <Badge variant="secondary">{cartCount}</Badge>
+                )}
+                {cartCount > 0 && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="size-8 text-destructive hover:text-destructive"
+                    aria-label="Limpiar carrito"
+                    onClick={clearCart}
+                  >
+                    <Trash2 className="size-4" />
+                  </Button>
+                )}
+              </span>
             </SheetTitle>
             <div className="flex items-center gap-2 pt-1">
               <Switch
