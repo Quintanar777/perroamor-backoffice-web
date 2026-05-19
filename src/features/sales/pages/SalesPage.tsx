@@ -193,6 +193,7 @@ export default function SalesPage() {
           from,
           to,
           paymentMethod: paymentMethod === ALL ? undefined : (paymentMethod as PaymentMethod),
+          isCancelled,
         }
       : null
 

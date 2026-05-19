@@ -71,6 +71,7 @@ export interface SaleStatsFilters {
   from?: string
   to?: string
   paymentMethod?: PaymentMethod
+  isCancelled?: boolean
 }
 
 export interface PaymentMethodStat {
