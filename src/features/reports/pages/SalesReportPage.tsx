@@ -136,7 +136,7 @@ export default function SalesReportPage() {
             disabled={isExporting || isLoading || rows.length === 0}
           >
             <Download className="size-4" />
-            {isExporting ? 'Exportando…' : 'Exportar CSV'}
+            {isExporting ? 'Exportando…' : 'Exportar detalle (CSV)'}
           </Button>
         }
       />
