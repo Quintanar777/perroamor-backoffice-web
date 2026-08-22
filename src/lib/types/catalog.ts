@@ -74,6 +74,12 @@ export interface ProductVariantInput {
   isActive?: boolean
 }
 
+export interface CatalogLookupResult {
+  matchType: 'PRODUCT' | 'VARIANT'
+  product: Product
+  variant: ProductVariant | null
+}
+
 export interface ProductFilters {
   page?: number
   size?: number
