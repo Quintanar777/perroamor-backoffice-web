@@ -208,7 +208,7 @@ export function AppLayout() {
   const desktopSidebar = (
     <aside
       className={cn(
-        'bg-sidebar text-sidebar-foreground hidden shrink-0 flex-col border-r transition-[width] duration-200 ease-out md:flex',
+        'bg-sidebar text-sidebar-foreground hidden shrink-0 flex-col border-r transition-[width] duration-200 ease-out md:flex print:hidden',
         collapsed ? 'w-16' : 'w-64',
       )}
     >
@@ -279,7 +279,7 @@ export function AppLayout() {
         {!kioskMode && desktopSidebar}
 
         <div className="flex min-w-0 flex-1 flex-col">
-          <header className="bg-background/80 sticky top-0 z-30 flex h-14 items-center gap-2 border-b px-4 backdrop-blur md:px-6">
+          <header className="bg-background/80 sticky top-0 z-30 flex h-14 items-center gap-2 border-b px-4 backdrop-blur md:px-6 print:hidden">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
                 <Button
@@ -354,7 +354,7 @@ export function AppLayout() {
             </div>
           </header>
 
-          <main className="flex-1 px-4 py-6 md:px-8 md:py-8">
+          <main className="flex-1 px-4 py-6 md:px-8 md:py-8 print:p-0">
             <ErrorBoundary fallback={<FeatureCrashFallback />}>
               <Outlet />
             </ErrorBoundary>

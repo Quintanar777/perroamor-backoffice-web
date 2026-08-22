@@ -24,6 +24,9 @@ const ProductsPage = lazyDefault(
 const VariantsPage = lazyDefault(
   () => import('@/features/catalog/pages/VariantsPage'),
 )
+const PrintableCatalogPage = lazyDefault(
+  () => import('@/features/catalog/pages/PrintableCatalogPage'),
+)
 const EventsPage = lazyDefault(
   () => import('@/features/events/pages/EventsPage'),
 )
@@ -60,6 +63,10 @@ export const router = createBrowserRouter([
           {
             path: 'products/:id/variants',
             element: withSuspense(<VariantsPage />),
+          },
+          {
+            path: 'products/labels',
+            element: withSuspense(<PrintableCatalogPage />),
           },
           { path: 'brands', element: withSuspense(<BrandsPage />) },
           { path: 'combos', element: withSuspense(<CombosPage />) },

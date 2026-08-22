@@ -35,6 +35,8 @@ export const productsApi = {
   remove: (id: number): Promise<void> => apiDelete<void>(`/products/${id}`),
   patchStock: (id: number, setTo: number): Promise<Product> =>
     apiPatch<Product>(`/products/${id}/stock`, { delta: 0, setTo }),
+  backfillCodes: (): Promise<Product[]> =>
+    apiPost<Product[]>('/products/backfill-codes'),
 }
 
 export const variantsApi = {
