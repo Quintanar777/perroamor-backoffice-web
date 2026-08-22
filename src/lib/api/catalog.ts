@@ -3,6 +3,7 @@ import type { PagedResponse } from '@/lib/types/api'
 import type {
   Brand,
   BrandInput,
+  CatalogLookupResult,
   Combo,
   ComboFilters,
   ComboInput,
@@ -34,6 +35,10 @@ export const productsApi = {
   remove: (id: number): Promise<void> => apiDelete<void>(`/products/${id}`),
   patchStock: (id: number, setTo: number): Promise<Product> =>
     apiPatch<Product>(`/products/${id}/stock`, { delta: 0, setTo }),
+  backfillCodes: (): Promise<Product[]> =>
+    apiPost<Product[]>('/products/backfill-codes'),
+  regenerateCode: (id: number): Promise<Product> =>
+    apiPatch<Product>(`/products/${id}/regenerate-code`),
 }
 
 export const variantsApi = {
@@ -61,6 +66,11 @@ export const combosApi = {
   update: (id: number, body: ComboInput): Promise<Combo> =>
     apiPut<Combo>(`/combos/${id}`, body),
   remove: (id: number): Promise<void> => apiDelete<void>(`/combos/${id}`),
+}
+
+export const catalogLookupApi = {
+  byCode: (code: string): Promise<CatalogLookupResult> =>
+    apiGet<CatalogLookupResult>('/catalog/lookup', { query: { code } }),
 }
 
 export const catalogKeys = {

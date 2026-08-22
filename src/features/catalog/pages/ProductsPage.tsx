@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Check, Layers, Pencil, Plus, Search, Trash2, X } from 'lucide-react'
+import {
+  Barcode as BarcodeIcon,
+  Check,
+  Layers,
+  Pencil,
+  Plus,
+  Printer,
+  Search,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -18,8 +28,10 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Pagination } from '@/components/shared/Pagination'
 import { ProductFormDialog } from '@/features/catalog/components/ProductFormDialog'
+import { ProductLabelDialog } from '@/features/catalog/components/ProductLabelDialog'
 import { useBrandsQuery } from '@/features/catalog/hooks/useBrands'
 import {
+  useBackfillCodes,
   useDeleteProduct,
   usePatchStock,
   useProductCategoriesQuery,
@@ -62,10 +74,12 @@ export default function ProductsPage() {
   const deleteProduct = useDeleteProduct()
   const updateProduct = useUpdateProduct()
   const patchStock = usePatchStock()
+  const backfillCodes = useBackfillCodes()
 
   const [editing, setEditing] = useState<Product | null>(null)
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<Product | null>(null)
+  const [labeling, setLabeling] = useState<Product | null>(null)
 
   // Inline edit state
   const [edits, setEdits] = useState<Map<number, RowEdit>>(() => new Map())
@@ -130,6 +144,7 @@ export default function ProductsPage() {
               id: p.id,
               body: {
                 name: p.name,
+                code: p.code,
                 brandId: p.brandId,
                 category: p.category,
                 description: p.description,
@@ -200,6 +215,11 @@ export default function ProductsPage() {
           {p.description && (
             <span className="text-muted-foreground line-clamp-1 text-xs">
               {p.description}
+            </span>
+          )}
+          {p.code && (
+            <span className="text-muted-foreground font-mono text-xs">
+              {p.code}
             </span>
           )}
         </div>
@@ -334,6 +354,14 @@ export default function ProductsPage() {
             <Button
               variant="ghost"
               size="icon"
+              aria-label={`Código de ${p.name}`}
+              onClick={() => setLabeling(p)}
+            >
+              <BarcodeIcon className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               aria-label={`Editar ${p.name}`}
               onClick={() => {
                 discard(p.id)
@@ -374,10 +402,25 @@ export default function ProductsPage() {
         title="Productos"
         description="Editá precio, mayoreo, stock y atributos directamente en la tabla. Enter para guardar, Esc para descartar."
         actions={
-          <Button onClick={() => setCreating(true)}>
-            <Plus className="size-4" />
-            Nuevo producto
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant="outline"
+              onClick={() => backfillCodes.mutate()}
+              disabled={backfillCodes.isPending}
+            >
+              {backfillCodes.isPending ? 'Generando…' : 'Generar códigos faltantes'}
+            </Button>
+            <Button variant="outline" asChild>
+              <Link to="/products/labels">
+                <Printer className="size-4" />
+                Etiquetas para escaneo
+              </Link>
+            </Button>
+            <Button onClick={() => setCreating(true)}>
+              <Plus className="size-4" />
+              Nuevo producto
+            </Button>
+          </div>
         }
       />
 
@@ -461,6 +504,11 @@ export default function ProductsPage() {
         open={formOpen}
         onOpenChange={(open) => (open ? null : closeForm())}
         product={editing}
+      />
+
+      <ProductLabelDialog
+        product={labeling}
+        onClose={() => setLabeling(null)}
       />
 
       <ConfirmDialog

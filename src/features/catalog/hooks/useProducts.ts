@@ -87,6 +87,32 @@ export function usePatchStock() {
   })
 }
 
+export function useBackfillCodes() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: () => productsApi.backfillCodes(),
+    onSuccess: (updated) => {
+      invalidateProducts(qc)
+      toast.success(
+        updated.length > 0
+          ? `Códigos generados para ${updated.length} producto(s)`
+          : 'Todos los productos ya tenían código',
+      )
+    },
+  })
+}
+
+export function useRegenerateCode() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => productsApi.regenerateCode(id),
+    onSuccess: (product) => {
+      invalidateProducts(qc)
+      toast.success('Código regenerado', { description: product.code ?? undefined })
+    },
+  })
+}
+
 export function useDeleteProduct() {
   const qc = useQueryClient()
   return useMutation({

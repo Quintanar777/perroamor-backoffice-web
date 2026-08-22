@@ -20,6 +20,7 @@ const intString = (label: string, opts: { min?: number } = {}) =>
 
 export const productSchema = z.object({
   name: z.string().min(1, 'Requerido').max(200),
+  code: z.string().max(60, 'Máximo 60 caracteres'),
   brandId: z.string().min(1, 'Seleccioná una marca'),
   category: z.string().min(1, 'Requerido').max(120),
   price: decimalString('Precio', { min: 0 }),

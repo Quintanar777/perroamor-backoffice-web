@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { Loader2, ShoppingCart, Trash2 } from 'lucide-react'
+import { toast } from 'sonner'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -29,6 +30,7 @@ import { NoEventBlocker } from '@/features/sales/components/NoEventBlocker'
 import { PaymentSection, PAYMENT_METHOD_COLOR } from '@/features/sales/components/PaymentSection'
 import { ProductCard } from '@/features/sales/components/ProductCard'
 import { ProductConfigSheet } from '@/features/sales/components/ProductConfigSheet'
+import { ScanInput } from '@/features/sales/components/ScanInput'
 import { SalesBottomBar } from '@/features/sales/components/SalesBottomBar'
 import { SaleSuccessScreen } from '@/features/sales/components/SaleSuccessScreen'
 import { useCreateSale } from '@/features/sales/hooks/useCreateSale'
@@ -42,7 +44,7 @@ import {
 import { useCurrentEventQuery } from '@/features/events/hooks/useEvents'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 import { formatMoney } from '@/lib/format'
-import type { Combo, Product } from '@/lib/types/catalog'
+import type { CatalogLookupResult, Combo, Product } from '@/lib/types/catalog'
 import type {
   PaymentMethod,
   SaleItemInput,
@@ -160,6 +162,49 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
     setConfigProduct(product)
   }
 
+  const handleScanResolved = (result: CatalogLookupResult) => {
+    if (result.matchType === 'VARIANT' && result.variant) {
+      const { product, variant } = result
+      if (variant.stock <= 0) {
+        toast.error('Sin stock', {
+          description: `${product.name} · ${variant.variantName}`,
+        })
+        return
+      }
+      const retailPrice = product.price + variant.priceAdjustment
+      const wholesalePriceEff = product.wholesalePrice + variant.priceAdjustment
+      addItem({
+        kind: 'product',
+        productId: product.id,
+        variantId: variant.id,
+        productName: product.name,
+        variantName: variant.variantName,
+        unitPrice: isWholesale ? wholesalePriceEff : retailPrice,
+        originalPrice: retailPrice,
+        wholesalePrice: wholesalePriceEff,
+        personalization: null,
+        quantity: 1,
+        maxStock: variant.stock,
+      })
+      toast.success('Agregado al carrito', {
+        description: `${product.name} · ${variant.variantName}`,
+      })
+      return
+    }
+
+    const { product } = result
+    if (product.hasVariants || product.canBePersonalized) {
+      setConfigProduct(product)
+      return
+    }
+    if (product.stock <= 0) {
+      toast.error('Sin stock', { description: product.name })
+      return
+    }
+    handleProductSelect(product)
+    toast.success('Agregado al carrito', { description: product.name })
+  }
+
   const handleComboSelect = (combo: Combo) => {
     addItem({
       kind: 'combo',
@@ -245,6 +290,8 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
   return (
     <div className="space-y-4 pb-24">
       {currentEventQuery.data && <EventBanner event={currentEventQuery.data} />}
+
+      <ScanInput onResolved={handleScanResolved} />
 
       <CatalogToolbar
         tab={tab}

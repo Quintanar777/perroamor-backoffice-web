@@ -17,6 +17,7 @@ export interface BrandInput {
 export interface Product {
   id: number
   name: string
+  code: string | null
   brandId: number
   brandName: string
   brandColor: string | null
@@ -34,6 +35,7 @@ export interface Product {
 
 export interface ProductInput {
   name: string
+  code?: string | null
   brandId: number
   category: string
   price: number
@@ -70,6 +72,12 @@ export interface ProductVariantInput {
   stock: number
   priceAdjustment: number
   isActive?: boolean
+}
+
+export interface CatalogLookupResult {
+  matchType: 'PRODUCT' | 'VARIANT'
+  product: Product
+  variant: ProductVariant | null
 }
 
 export interface ProductFilters {
