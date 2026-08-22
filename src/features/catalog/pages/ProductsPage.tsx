@@ -130,6 +130,7 @@ export default function ProductsPage() {
               id: p.id,
               body: {
                 name: p.name,
+                code: p.code,
                 brandId: p.brandId,
                 category: p.category,
                 description: p.description,
@@ -200,6 +201,11 @@ export default function ProductsPage() {
           {p.description && (
             <span className="text-muted-foreground line-clamp-1 text-xs">
               {p.description}
+            </span>
+          )}
+          {p.code && (
+            <span className="text-muted-foreground font-mono text-xs">
+              {p.code}
             </span>
           )}
         </div>

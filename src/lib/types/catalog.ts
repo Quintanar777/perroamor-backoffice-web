@@ -17,6 +17,7 @@ export interface BrandInput {
 export interface Product {
   id: number
   name: string
+  code: string | null
   brandId: number
   brandName: string
   brandColor: string | null
@@ -34,6 +35,7 @@ export interface Product {
 
 export interface ProductInput {
   name: string
+  code?: string | null
   brandId: number
   category: string
   price: number

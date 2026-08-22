@@ -51,6 +51,7 @@ interface Props {
 
 const KNOWN_FIELDS = [
   'name',
+  'code',
   'brandId',
   'category',
   'price',
@@ -64,6 +65,7 @@ const KNOWN_FIELDS = [
 
 const emptyDefaults: ProductFormInput = {
   name: '',
+  code: '',
   brandId: '',
   category: '',
   price: '',
@@ -94,6 +96,7 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
       product
         ? {
             name: product.name,
+            code: product.code ?? '',
             brandId: String(product.brandId),
             category: product.category,
             price: String(product.price),
@@ -110,8 +113,10 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
 
   const onSubmit = form.handleSubmit(async (values) => {
     const description = values.description.trim()
+    const code = values.code.trim()
     const body = {
       name: values.name.trim(),
+      code: code.length > 0 ? code : null,
       brandId: Number(values.brandId),
       category: values.category.trim(),
       price: Number(values.price),
@@ -165,6 +170,28 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
                     <FormControl>
                       <Input autoFocus disabled={pending} {...field} />
                     </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="code"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Código de escaneo</FormLabel>
+                    <FormControl>
+                      <Input
+                        disabled={pending}
+                        placeholder="Se autogenera si lo dejás vacío"
+                        className="font-mono"
+                        {...field}
+                      />
+                    </FormControl>
+                    <FormDescription className="text-xs">
+                      Lo que va a leer el lector de código de barras/QR en el POS.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
