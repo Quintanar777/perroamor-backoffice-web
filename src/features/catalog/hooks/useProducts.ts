@@ -102,6 +102,17 @@ export function useBackfillCodes() {
   })
 }
 
+export function useRegenerateCode() {
+  const qc = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => productsApi.regenerateCode(id),
+    onSuccess: (product) => {
+      invalidateProducts(qc)
+      toast.success('Código regenerado', { description: product.code ?? undefined })
+    },
+  })
+}
+
 export function useDeleteProduct() {
   const qc = useQueryClient()
   return useMutation({

@@ -1,5 +1,15 @@
 import { useEffect, useState } from 'react'
-import { Check, Layers, Pencil, Plus, Printer, Search, Trash2, X } from 'lucide-react'
+import {
+  Barcode as BarcodeIcon,
+  Check,
+  Layers,
+  Pencil,
+  Plus,
+  Printer,
+  Search,
+  Trash2,
+  X,
+} from 'lucide-react'
 import { Link } from 'react-router-dom'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
@@ -18,6 +28,7 @@ import { EmptyState } from '@/components/shared/EmptyState'
 import { PageHeader } from '@/components/shared/PageHeader'
 import { Pagination } from '@/components/shared/Pagination'
 import { ProductFormDialog } from '@/features/catalog/components/ProductFormDialog'
+import { ProductLabelDialog } from '@/features/catalog/components/ProductLabelDialog'
 import { useBrandsQuery } from '@/features/catalog/hooks/useBrands'
 import {
   useBackfillCodes,
@@ -68,6 +79,7 @@ export default function ProductsPage() {
   const [editing, setEditing] = useState<Product | null>(null)
   const [creating, setCreating] = useState(false)
   const [deleting, setDeleting] = useState<Product | null>(null)
+  const [labeling, setLabeling] = useState<Product | null>(null)
 
   // Inline edit state
   const [edits, setEdits] = useState<Map<number, RowEdit>>(() => new Map())
@@ -342,6 +354,14 @@ export default function ProductsPage() {
             <Button
               variant="ghost"
               size="icon"
+              aria-label={`Código de ${p.name}`}
+              onClick={() => setLabeling(p)}
+            >
+              <BarcodeIcon className="size-4" />
+            </Button>
+            <Button
+              variant="ghost"
+              size="icon"
               aria-label={`Editar ${p.name}`}
               onClick={() => {
                 discard(p.id)
@@ -484,6 +504,11 @@ export default function ProductsPage() {
         open={formOpen}
         onOpenChange={(open) => (open ? null : closeForm())}
         product={editing}
+      />
+
+      <ProductLabelDialog
+        product={labeling}
+        onClose={() => setLabeling(null)}
       />
 
       <ConfirmDialog

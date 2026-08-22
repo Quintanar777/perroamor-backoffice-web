@@ -37,6 +37,8 @@ export const productsApi = {
     apiPatch<Product>(`/products/${id}/stock`, { delta: 0, setTo }),
   backfillCodes: (): Promise<Product[]> =>
     apiPost<Product[]>('/products/backfill-codes'),
+  regenerateCode: (id: number): Promise<Product> =>
+    apiPatch<Product>(`/products/${id}/regenerate-code`),
 }
 
 export const variantsApi = {
