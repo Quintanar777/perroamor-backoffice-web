@@ -13,6 +13,7 @@ import {
   PlusCircle,
   Receipt,
   Tag,
+  TicketPercent,
   Users,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -63,6 +64,7 @@ const NAV_ITEMS: NavItemDef[] = [
   { to: '/sales/new', label: 'Nueva Venta', icon: PlusCircle },
   { to: '/sales', label: 'Ventas', icon: Receipt, end: true },
   { to: '/reports/sales', label: 'Reportes', icon: BarChart2, managerOrAdmin: true },
+  { to: '/discounts', label: 'Descuentos', icon: TicketPercent, managerOrAdmin: true },
   { to: '/users', label: 'Usuarios', icon: Users, adminOnly: true },
 ]
 
