@@ -21,6 +21,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { BrandBadge } from '@/components/shared/BrandBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { DataTable, type DataTableColumn } from '@/components/shared/DataTable'
@@ -46,6 +47,8 @@ import type { Product } from '@/lib/types/catalog'
 const PAGE_SIZE = 10
 const ALL = '__all__'
 
+type ActiveFilter = 'all' | 'active' | 'inactive'
+
 type RowEdit = {
   price?: number
   wholesalePrice?: number
@@ -57,15 +60,21 @@ export default function ProductsPage() {
   const [brandId, setBrandId] = useState<string>(ALL)
   const [category, setCategory] = useState<string>(ALL)
   const [searchInput, setSearchInput] = useState('')
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>('active')
   const search = useDebouncedValue(searchInput, 300)
 
   const filters = {
     page,
     size: PAGE_SIZE,
-    isActive: true,
     brandId: brandId === ALL ? undefined : Number(brandId),
     category: category === ALL ? undefined : category,
     q: search.trim().length > 0 ? search.trim() : undefined,
+    isActive:
+      activeFilter === 'all'
+        ? undefined
+        : activeFilter === 'active'
+          ? true
+          : false,
   }
 
   const productsQuery = useProductsQuery(filters)
@@ -88,7 +97,7 @@ export default function ProductsPage() {
   // Discard all inline edits when filters or page change
   useEffect(() => {
     setEdits(new Map())
-  }, [brandId, category, search, page])
+  }, [brandId, category, search, activeFilter, page])
 
   const formOpen = creating || editing !== null
   const closeForm = () => {
@@ -424,7 +433,7 @@ export default function ProductsPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)_auto]">
         <Select
           value={brandId}
           onValueChange={(v) => setBrandId(v)}
@@ -468,6 +477,21 @@ export default function ProductsPage() {
             className="pl-9"
           />
         </div>
+
+        <ToggleGroup
+          type="single"
+          value={activeFilter}
+          onValueChange={(v) => {
+            if (!v) return
+            setActiveFilter(v as ActiveFilter)
+            setPage(0)
+          }}
+          variant="outline"
+        >
+          <ToggleGroupItem value="active">Activos</ToggleGroupItem>
+          <ToggleGroupItem value="inactive">Inactivos</ToggleGroupItem>
+          <ToggleGroupItem value="all">Todos</ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {showEmpty ? (

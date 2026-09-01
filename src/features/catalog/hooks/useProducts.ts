@@ -20,15 +20,32 @@ export function useProductsQuery(filters: ProductFilters) {
   })
 }
 
+// Backend caps page size at 200. Removing variants means each size is now
+// its own product, so a single page can silently truncate the catalog — loop
+// while there are more pages, up to a hard cap to avoid runaway requests.
+const MAX_CATALOG_PAGES = 10
+
+async function fetchAllActiveProducts(): Promise<Product[]> {
+  const all: Product[] = []
+  let page = 0
+  let totalPages = 1
+  while (page < totalPages && page < MAX_CATALOG_PAGES) {
+    const response = await productsApi.list({
+      isActive: true,
+      page,
+      size: 200,
+    })
+    all.push(...response.content)
+    totalPages = response.totalPages
+    page += 1
+  }
+  return all
+}
+
 export function useAllProductsQuery() {
   return useQuery({
     queryKey: ['catalog', 'all-products'] as const,
-    queryFn: async () => {
-      // Backend caps page size at 200. Para >200 productos, mover a un endpoint
-      // dedicado o paginar internamente cuando el ComboBuilder lo necesite.
-      const page = await productsApi.list({ page: 0, size: 200 })
-      return page.content
-    },
+    queryFn: fetchAllActiveProducts,
     staleTime: 60_000,
   })
 }
@@ -37,11 +54,9 @@ export function useProductCategoriesQuery() {
   return useQuery({
     queryKey: ['catalog', 'product-categories'] as const,
     queryFn: async () => {
-      // Backend caps page size at 200. Para >200 productos, mover esto a un
-      // endpoint dedicado /products/categories en el backend.
-      const page = await productsApi.list({ page: 0, size: 200 })
+      const products = await fetchAllActiveProducts()
       const set = new Set<string>()
-      for (const p of page.content) if (p.category) set.add(p.category)
+      for (const p of products) if (p.category) set.add(p.category)
       return [...set].sort((a, b) => a.localeCompare(b, 'es'))
     },
     staleTime: 5 * 60_000,

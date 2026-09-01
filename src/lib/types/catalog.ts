@@ -86,6 +86,7 @@ export interface ProductFilters {
   brandId?: number
   category?: string
   q?: string
+  isActive?: boolean
 }
 
 export interface ComboItem {
