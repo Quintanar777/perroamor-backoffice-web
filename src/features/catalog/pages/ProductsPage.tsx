@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import {
   Barcode as BarcodeIcon,
   Check,
-  Layers,
   Pencil,
   Plus,
   Printer,
@@ -39,7 +38,6 @@ import {
   useProductsQuery,
   useUpdateProduct,
 } from '@/features/catalog/hooks/useProducts'
-import { formatMoney } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 import { ApiError, NetworkError } from '@/lib/types/api'
 import type { Product } from '@/lib/types/catalog'
@@ -161,7 +159,6 @@ export default function ProductsPage() {
                 wholesalePrice: e.wholesalePrice ?? p.wholesalePrice,
                 stock: p.stock,
                 canBePersonalized: p.canBePersonalized,
-                hasVariants: p.hasVariants,
                 isActive: p.isActive,
               },
             })
@@ -245,75 +242,60 @@ export default function ProductsPage() {
       header: <span className="block text-right">Precio</span>,
       headerClassName: 'w-28 text-right',
       className: 'text-right',
-      cell: (p) =>
-        p.hasVariants ? (
-          <span className="text-muted-foreground tabular-nums text-sm">
-            {formatMoney(p.price)}{' '}
-            <span className="text-xs">base</span>
-          </span>
-        ) : (
-          <Input
-            type="number"
-            min={0}
-            step={0.01}
-            value={getVal(p, 'price')}
-            onChange={(e) => {
-              const n = e.target.valueAsNumber
-              if (!isNaN(n)) setField(p.id, { price: n })
-            }}
-            onKeyDown={handleKeyDown(p)}
-            className="h-7 w-full text-right tabular-nums"
-          />
-        ),
+      cell: (p) => (
+        <Input
+          type="number"
+          min={0}
+          step={0.01}
+          value={getVal(p, 'price')}
+          onChange={(e) => {
+            const n = e.target.valueAsNumber
+            if (!isNaN(n)) setField(p.id, { price: n })
+          }}
+          onKeyDown={handleKeyDown(p)}
+          className="h-7 w-full text-right tabular-nums"
+        />
+      ),
     },
     {
       key: 'wholesalePrice',
       header: <span className="block text-right">Mayoreo</span>,
       headerClassName: 'w-28 text-right',
       className: 'text-right',
-      cell: (p) =>
-        p.hasVariants ? (
-          <span className="text-muted-foreground tabular-nums text-sm">
-            {formatMoney(p.wholesalePrice)}{' '}
-            <span className="text-xs">base</span>
-          </span>
-        ) : (
-          <Input
-            type="number"
-            min={0}
-            step={0.01}
-            value={getVal(p, 'wholesalePrice')}
-            onChange={(e) => {
-              const n = e.target.valueAsNumber
-              if (!isNaN(n)) setField(p.id, { wholesalePrice: n })
-            }}
-            onKeyDown={handleKeyDown(p)}
-            className="h-7 w-full text-right tabular-nums"
-          />
-        ),
+      cell: (p) => (
+        <Input
+          type="number"
+          min={0}
+          step={0.01}
+          value={getVal(p, 'wholesalePrice')}
+          onChange={(e) => {
+            const n = e.target.valueAsNumber
+            if (!isNaN(n)) setField(p.id, { wholesalePrice: n })
+          }}
+          onKeyDown={handleKeyDown(p)}
+          className="h-7 w-full text-right tabular-nums"
+        />
+      ),
     },
     {
       key: 'stock',
       header: <span className="block text-right">Stock</span>,
       headerClassName: 'w-24 text-right',
       className: 'text-right',
-      cell: (p) =>
-        p.hasVariants ? (
-          <span className="tabular-nums">{p.stock}</span>
-        ) : (
-          <Input
-            type="number"
-            min={0}
-            step={1}
-            value={getVal(p, 'stock')}
-            onChange={(e) => {
-              const n = e.target.valueAsNumber
-              if (!isNaN(n)) setField(p.id, { stock: Math.round(n) })
-            }}
-            onKeyDown={handleKeyDown(p)}
-            className="h-7 w-full text-right tabular-nums"
-          />
-        ),
+      cell: (p) => (
+        <Input
+          type="number"
+          min={0}
+          step={1}
+          value={getVal(p, 'stock')}
+          onChange={(e) => {
+            const n = e.target.valueAsNumber
+            if (!isNaN(n)) setField(p.id, { stock: Math.round(n) })
+          }}
+          onKeyDown={handleKeyDown(p)}
+          className="h-7 w-full text-right tabular-nums"
+        />
+      ),
     },
     {
       key: 'actions',
@@ -347,18 +329,6 @@ export default function ProductsPage() {
                   <X className="size-4" />
                 </Button>
               </>
-            )}
-            {p.hasVariants && (
-              <Button
-                variant="ghost"
-                size="icon"
-                asChild
-                aria-label={`Variantes de ${p.name}`}
-              >
-                <Link to={`/products/${p.id}/variants`}>
-                  <Layers className="size-4" />
-                </Link>
-              </Button>
             )}
             <Button
               variant="ghost"
@@ -539,7 +509,7 @@ export default function ProductsPage() {
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
         title={`Eliminar "${deleting?.name ?? ''}"?`}
-        description="El producto y sus variantes dejarán de estar disponibles. Esta acción no se puede deshacer."
+        description="El producto dejará de estar disponible. Esta acción no se puede deshacer."
         confirmLabel="Eliminar"
         destructive
         loading={deleteProduct.isPending}

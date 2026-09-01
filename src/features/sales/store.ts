@@ -14,29 +14,15 @@ export interface ProductCartItem {
   maxStock: number
 }
 
-export interface ComboCartItem {
-  kind: 'combo'
-  comboId: number
-  comboName: string
-  unitPrice: number
-  originalPrice: number
-  quantity: number
-  maxStock: number
-}
+export type CartItem = ProductCartItem
 
-export type CartItem = ProductCartItem | ComboCartItem
-
-export const itemKey = (item: CartItem): string => {
-  if (item.kind === 'product') {
-    return [
-      'product',
-      item.productId,
-      item.variantId ?? '',
-      item.personalization ?? '',
-    ].join(':')
-  }
-  return ['combo', item.comboId].join(':')
-}
+export const itemKey = (item: CartItem): string =>
+  [
+    'product',
+    item.productId,
+    item.variantId ?? '',
+    item.personalization ?? '',
+  ].join(':')
 
 interface CartState {
   items: CartItem[]
@@ -114,10 +100,10 @@ export const useCartStore = create<CartState & CartActions>((set) => ({
   setWholesale: (v) =>
     set((state) => ({
       isWholesale: v,
-      items: state.items.map((it) => {
-        if (it.kind !== 'product') return it
-        return { ...it, unitPrice: v ? it.wholesalePrice : it.originalPrice }
-      }) as CartItem[],
+      items: state.items.map((it) => ({
+        ...it,
+        unitPrice: v ? it.wholesalePrice : it.originalPrice,
+      })),
     })),
 }))
 
@@ -135,15 +121,6 @@ export const selectQuantityForProduct =
         it.kind === 'product' && it.productId === productId
           ? acc + it.quantity
           : acc,
-      0,
-    )
-
-export const selectQuantityForCombo =
-  (comboId: number) =>
-  (state: CartState): number =>
-    state.items.reduce(
-      (acc, it) =>
-        it.kind === 'combo' && it.comboId === comboId ? acc + it.quantity : acc,
       0,
     )
 

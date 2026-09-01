@@ -20,8 +20,7 @@ export function ProductCard({
 }: Props) {
   const isOutOfStock = product.stock <= 0
   const disabled = isOutOfStock
-  const canConfigure =
-    !!onConfigure && (product.hasVariants || product.canBePersonalized)
+  const canConfigure = !!onConfigure && product.canBePersonalized
   const hasInCart = quantityInCart > 0
 
   const handleClick = () => {

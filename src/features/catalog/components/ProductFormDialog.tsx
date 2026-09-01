@@ -59,7 +59,6 @@ const KNOWN_FIELDS = [
   'stock',
   'description',
   'canBePersonalized',
-  'hasVariants',
   'isActive',
 ] as const
 
@@ -73,7 +72,6 @@ const emptyDefaults: ProductFormInput = {
   stock: '0',
   description: '',
   canBePersonalized: false,
-  hasVariants: false,
   isActive: true,
 }
 
@@ -104,7 +102,6 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
             stock: String(product.stock),
             description: product.description ?? '',
             canBePersonalized: product.canBePersonalized,
-            hasVariants: product.hasVariants,
             isActive: product.isActive,
           }
         : emptyDefaults,
@@ -124,7 +121,6 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
       stock: Number(values.stock),
       description: description.length > 0 ? description : null,
       canBePersonalized: values.canBePersonalized,
-      hasVariants: values.hasVariants,
       isActive: values.isActive,
     }
     try {
@@ -305,9 +301,6 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
                         value={field.value ?? ''}
                       />
                     </FormControl>
-                    <FormDescription>
-                      Si tiene variantes, el stock real vive en cada variante.
-                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
@@ -328,28 +321,6 @@ export function ProductFormDialog({ open, onOpenChange, product }: Props) {
                       />
                     </FormControl>
                     <FormMessage />
-                  </FormItem>
-                )}
-              />
-
-              <FormField
-                control={form.control}
-                name="hasVariants"
-                render={({ field }) => (
-                  <FormItem className="flex flex-row items-center justify-between rounded-lg border p-3">
-                    <div className="space-y-0.5">
-                      <FormLabel>Tiene variantes</FormLabel>
-                      <FormDescription className="text-xs">
-                        Color, talla, diseño, etc.
-                      </FormDescription>
-                    </div>
-                    <FormControl>
-                      <Switch
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        disabled={pending}
-                      />
-                    </FormControl>
                   </FormItem>
                 )}
               />

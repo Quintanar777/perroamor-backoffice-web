@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { Minus, Plus, Trash2 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
@@ -21,10 +20,8 @@ function ItemRow({ item }: { item: CartItem }) {
   const key = itemKey(item)
   const lineTotal = item.unitPrice * item.quantity
 
-  const isCombo = item.kind === 'combo'
-  const title = isCombo ? item.comboName : item.productName
-  const expectedPrice =
-    !isCombo && isWholesale ? item.wholesalePrice : item.originalPrice
+  const title = item.productName
+  const expectedPrice = isWholesale ? item.wholesalePrice : item.originalPrice
   const priceEdited = item.unitPrice !== expectedPrice
 
   const [priceDraft, setPriceDraft] = useState(item.unitPrice.toString())
@@ -52,17 +49,12 @@ function ItemRow({ item }: { item: CartItem }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
-            {isCombo && (
-              <Badge variant="secondary" className="text-[10px]">
-                Combo
-              </Badge>
-            )}
             <p className="truncate font-medium">{title}</p>
           </div>
-          {item.kind === 'product' && item.variantName && (
+          {item.variantName && (
             <p className="text-muted-foreground text-xs">{item.variantName}</p>
           )}
-          {item.kind === 'product' && item.personalization && (
+          {item.personalization && (
             <p className="text-muted-foreground line-clamp-1 text-xs italic">
               "{item.personalization}"
             </p>
@@ -157,7 +149,7 @@ export function CartItemsList() {
       <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 py-12 text-center text-sm">
         <span className="text-3xl">🐕</span>
         <p>El carrito está vacío.</p>
-        <p className="text-xs">Toca un producto o combo para empezar.</p>
+        <p className="text-xs">Toca un producto para empezar.</p>
       </div>
     )
   }

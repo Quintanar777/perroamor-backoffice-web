@@ -16,14 +16,11 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBrandsQuery } from '@/features/catalog/hooks/useBrands'
-import { useAllCombosQuery } from '@/features/catalog/hooks/useCombos'
 import { useAllProductsQuery } from '@/features/catalog/hooks/useProducts'
 import {
   CatalogToolbar,
   ALL_BRANDS,
-  type CatalogTab,
 } from '@/features/sales/components/CatalogToolbar'
-import { ComboCard } from '@/features/sales/components/ComboCard'
 import { CartItemsList } from '@/features/sales/components/CartItemsList'
 import { EventBanner } from '@/features/sales/components/EventBanner'
 import { NoEventBlocker } from '@/features/sales/components/NoEventBlocker'
@@ -44,7 +41,7 @@ import {
 import { useCurrentEventQuery } from '@/features/events/hooks/useEvents'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 import { formatMoney } from '@/lib/format'
-import type { CatalogLookupResult, Combo, Product } from '@/lib/types/catalog'
+import type { CatalogLookupResult, Product } from '@/lib/types/catalog'
 import type {
   PaymentMethod,
   SaleItemInput,
@@ -72,14 +69,12 @@ export default function NewSalePage() {
 }
 
 function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventStatus: string; eventLocation: string }) {
-  const [tab, setTab] = useState<CatalogTab>('products')
   const [brandId, setBrandId] = useState<string>(ALL_BRANDS)
   const [searchInput, setSearchInput] = useState('')
   const search = useDebouncedValue(searchInput, 300)
 
   const brandsQuery = useBrandsQuery()
   const productsQuery = useAllProductsQuery()
-  const combosQuery = useAllCombosQuery()
   const currentEventQuery = useCurrentEventQuery()
 
   const [configProduct, setConfigProduct] = useState<Product | null>(null)
@@ -104,16 +99,6 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
     return map
   }, [items])
 
-  const comboQuantities = useMemo(() => {
-    const map = new Map<number, number>()
-    for (const it of items) {
-      if (it.kind === 'combo') {
-        map.set(it.comboId, (map.get(it.comboId) ?? 0) + it.quantity)
-      }
-    }
-    return map
-  }, [items])
-
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH')
   const [amountReceived, setAmountReceived] = useState('')
   const [customerName, setCustomerName] = useState('')
@@ -132,15 +117,6 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       .filter((p) => brandId === ALL_BRANDS || p.brandId === Number(brandId))
       .filter((p) => q.length === 0 || norm(p.name).includes(q))
   }, [productsQuery.data, brandId, search])
-
-  const filteredCombos = useMemo(() => {
-    const all = combosQuery.data ?? []
-    const q = norm(search.trim())
-    return all
-      .filter((c) => c.isActive)
-      .filter((c) => brandId === ALL_BRANDS || c.brandId === Number(brandId))
-      .filter((c) => q.length === 0 || norm(c.name).includes(q))
-  }, [combosQuery.data, brandId, search])
 
   const handleProductSelect = (product: Product) => {
     addItem({
@@ -163,37 +139,8 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
   }
 
   const handleScanResolved = (result: CatalogLookupResult) => {
-    if (result.matchType === 'VARIANT' && result.variant) {
-      const { product, variant } = result
-      if (variant.stock <= 0) {
-        toast.error('Sin stock', {
-          description: `${product.name} · ${variant.variantName}`,
-        })
-        return
-      }
-      const retailPrice = product.price + variant.priceAdjustment
-      const wholesalePriceEff = product.wholesalePrice + variant.priceAdjustment
-      addItem({
-        kind: 'product',
-        productId: product.id,
-        variantId: variant.id,
-        productName: product.name,
-        variantName: variant.variantName,
-        unitPrice: isWholesale ? wholesalePriceEff : retailPrice,
-        originalPrice: retailPrice,
-        wholesalePrice: wholesalePriceEff,
-        personalization: null,
-        quantity: 1,
-        maxStock: variant.stock,
-      })
-      toast.success('Agregado al carrito', {
-        description: `${product.name} · ${variant.variantName}`,
-      })
-      return
-    }
-
     const { product } = result
-    if (product.hasVariants || product.canBePersonalized) {
+    if (product.canBePersonalized) {
       setConfigProduct(product)
       return
     }
@@ -205,34 +152,13 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
     toast.success('Agregado al carrito', { description: product.name })
   }
 
-  const handleComboSelect = (combo: Combo) => {
-    addItem({
-      kind: 'combo',
-      comboId: combo.id,
-      comboName: combo.name,
-      unitPrice: combo.price,
-      originalPrice: combo.price,
-      quantity: 1,
-      maxStock: combo.availableStock,
-    })
-  }
-
-  const buildItemPayload = (item: CartItem): SaleItemInput => {
-    if (item.kind === 'product') {
-      return {
-        productId: item.productId,
-        variantId: item.variantId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        personalization: item.personalization ?? undefined,
-      }
-    }
-    return {
-      comboId: item.comboId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-    }
-  }
+  const buildItemPayload = (item: CartItem): SaleItemInput => ({
+    productId: item.productId,
+    variantId: item.variantId,
+    quantity: item.quantity,
+    unitPrice: item.unitPrice,
+    personalization: item.personalization ?? undefined,
+  })
 
   const parsedDiscount = Number(discountInput)
   const discountValid =
@@ -294,8 +220,6 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       <ScanInput onResolved={handleScanResolved} />
 
       <CatalogToolbar
-        tab={tab}
-        onTabChange={setTab}
         brandId={brandId}
         onBrandChange={setBrandId}
         search={searchInput}
@@ -303,36 +227,19 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
         brands={brandsQuery.data ?? []}
       />
 
-      {tab === 'products' ? (
-        productsQuery.isLoading ? (
-          <CatalogSkeleton />
-        ) : filteredProducts.length === 0 ? (
-          <EmptyResults />
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4">
-            {filteredProducts.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                quantityInCart={productQuantities.get(p.id) ?? 0}
-                onSelect={handleProductSelect}
-                onConfigure={handleProductConfigure}
-              />
-            ))}
-          </div>
-        )
-      ) : combosQuery.isLoading ? (
+      {productsQuery.isLoading ? (
         <CatalogSkeleton />
-      ) : filteredCombos.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <EmptyResults />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4">
-          {filteredCombos.map((c) => (
-            <ComboCard
-              key={c.id}
-              combo={c}
-              quantityInCart={comboQuantities.get(c.id) ?? 0}
-              onSelect={handleComboSelect}
+          {filteredProducts.map((p) => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              quantityInCart={productQuantities.get(p.id) ?? 0}
+              onSelect={handleProductSelect}
+              onConfigure={handleProductConfigure}
             />
           ))}
         </div>
