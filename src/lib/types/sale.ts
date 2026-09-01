@@ -8,6 +8,8 @@ export interface SaleItem {
   variantName: string | null
   comboId: number | null
   comboName: string | null
+  discountId: number | null
+  discountName: string | null
   quantity: number
   unitPrice: number
   personalization: string | null
@@ -30,6 +32,7 @@ export interface Sale {
   totalAmount: number
   subtotal: number
   isPaid: boolean
+  isWholesale: boolean
   isCancelled: boolean
   cancelledAt: string | null
   createdAt: string
@@ -53,6 +56,7 @@ export interface SaleInput {
   customerEmail?: string | null
   notes?: string | null
   discountAmount?: number
+  isWholesale?: boolean
   items: SaleItemInput[]
 }
 

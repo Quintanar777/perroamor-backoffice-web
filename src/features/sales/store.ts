@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { Sale } from '@/lib/types/sale'
 
 export interface ProductCartItem {
   kind: 'product'
@@ -12,6 +13,9 @@ export interface ProductCartItem {
   personalization: string | null
   quantity: number
   maxStock: number
+  discountId: number | null       // written only by applyServerPricing, after checkout confirms
+  discountName: string | null     // written only by applyServerPricing, after checkout confirms
+  discountedPrice: number | null  // server-confirmed final price when a discount matched
 }
 
 export type CartItem = ProductCartItem
@@ -36,6 +40,7 @@ interface CartActions {
   removeItem: (key: string) => void
   clear: () => void
   setWholesale: (v: boolean) => void
+  applyServerPricing: (sale: Sale) => void
 }
 
 const clampQty = (qty: number, max: number): number => {
@@ -104,6 +109,25 @@ export const useCartStore = create<CartState & CartActions>((set) => ({
         ...it,
         unitPrice: v ? it.wholesalePrice : it.originalPrice,
       })),
+    })),
+  applyServerPricing: (sale) =>
+    set((state) => ({
+      items: state.items.map((it) => {
+        const match = sale.items.find(
+          (si) =>
+            si.productId === it.productId &&
+            (si.variantId ?? null) === it.variantId &&
+            (si.personalization ?? null) === it.personalization,
+        )
+        if (!match) return it
+        return {
+          ...it,
+          unitPrice: match.unitPrice,
+          discountId: match.discountId,
+          discountName: match.discountName,
+          discountedPrice: match.discountId !== null ? match.unitPrice : null,
+        }
+      }),
     })),
 }))
 

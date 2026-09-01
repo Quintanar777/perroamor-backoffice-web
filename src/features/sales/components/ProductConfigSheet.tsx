@@ -73,6 +73,9 @@ function ConfigBody({
     personalization: personalization.trim() || null,
     quantity: qty,
     maxStock: product.stock,
+    discountId: null,
+    discountName: null,
+    discountedPrice: null,
   })
 
   const handleAdd = () => {

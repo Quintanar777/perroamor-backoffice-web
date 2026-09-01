@@ -16,6 +16,7 @@ import {
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { Money } from '@/components/shared/Money'
 import { PageHeader } from '@/components/shared/PageHeader'
+import { DiscountBadge } from '@/features/sales/components/DiscountBadge'
 import { SaleStatusBadge } from '@/features/sales/components/SaleStatusBadge'
 import {
   useCancelSale,
@@ -214,9 +215,14 @@ function ItemDescription({ item }: { item: SaleItem }) {
   }
   return (
     <div className="flex flex-col gap-0.5">
-      <span className="font-medium">
-        {item.productName ?? `Producto #${item.productId}`}
-      </span>
+      <div className="flex flex-wrap items-center gap-2">
+        <span className="font-medium">
+          {item.productName ?? `Producto #${item.productId}`}
+        </span>
+        {item.discountId !== null && (
+          <DiscountBadge discountName={item.discountName ?? `Descuento #${item.discountId}`} />
+        )}
+      </div>
       {item.variantId && (
         <span className="text-muted-foreground text-xs">
           {item.variantName ?? `Variante #${item.variantId}`}

@@ -29,7 +29,10 @@ import { ProductCard } from '@/features/sales/components/ProductCard'
 import { ProductConfigSheet } from '@/features/sales/components/ProductConfigSheet'
 import { ScanInput } from '@/features/sales/components/ScanInput'
 import { SalesBottomBar } from '@/features/sales/components/SalesBottomBar'
-import { SaleSuccessScreen } from '@/features/sales/components/SaleSuccessScreen'
+import {
+  SaleSuccessScreen,
+  type DiscountedLine,
+} from '@/features/sales/components/SaleSuccessScreen'
 import { useCreateSale } from '@/features/sales/hooks/useCreateSale'
 import {
   selectCartCount,
@@ -88,6 +91,7 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
   const clearCart = useCartStore((s) => s.clear)
   const addItem = useCartStore((s) => s.addItem)
   const setWholesale = useCartStore((s) => s.setWholesale)
+  const applyServerPricing = useCartStore((s) => s.applyServerPricing)
 
   const productQuantities = useMemo(() => {
     const map = new Map<number, number>()
@@ -105,7 +109,11 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
   const [discountInput, setDiscountInput] = useState('')
 
   const [successOpen, setSuccessOpen] = useState(false)
-  const [successData, setSuccessData] = useState<{ total: number; change: number | null } | null>(null)
+  const [successData, setSuccessData] = useState<{
+    total: number
+    change: number | null
+    discountedLines: DiscountedLine[]
+  } | null>(null)
 
   const createSale = useCreateSale()
 
@@ -131,6 +139,9 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       personalization: null,
       quantity: 1,
       maxStock: product.stock,
+      discountId: null,
+      discountName: null,
+      discountedPrice: null,
     })
   }
 
@@ -152,13 +163,22 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
     toast.success('Agregado al carrito', { description: product.name })
   }
 
-  const buildItemPayload = (item: CartItem): SaleItemInput => ({
-    productId: item.productId,
-    variantId: item.variantId,
-    quantity: item.quantity,
-    unitPrice: item.unitPrice,
-    personalization: item.personalization ?? undefined,
-  })
+  const buildItemPayload = (item: CartItem): SaleItemInput => {
+    // An explicit unitPrice is a full override the backend honors verbatim.
+    // Omitting it lets the backend price the line (matching a discount, or
+    // applying the wholesale/retail rate) — only send it when the vendor
+    // manually edited the line away from what the server would compute.
+    const expectedPrice =
+      item.discountedPrice ?? (isWholesale ? item.wholesalePrice : item.originalPrice)
+    const manuallyEdited = item.unitPrice !== expectedPrice
+    return {
+      productId: item.productId,
+      variantId: item.variantId,
+      quantity: item.quantity,
+      unitPrice: manuallyEdited ? item.unitPrice : undefined,
+      personalization: item.personalization ?? undefined,
+    }
+  }
 
   const parsedDiscount = Number(discountInput)
   const discountValid =
@@ -186,21 +206,33 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
   const handleCheckout = async () => {
     if (!canCheckout) return
     try {
-      await createSale.mutateAsync({
+      const sale = await createSale.mutateAsync({
         eventId,
         paymentMethod,
         customerName: customerName.trim().length > 0 ? customerName.trim() : null,
         discountAmount: discountAmount > 0 ? discountAmount : undefined,
+        isWholesale,
         items: items.map(buildItemPayload),
       })
+      // Write server-confirmed prices/discounts back into the cart before the
+      // success screen renders — the cart itself only clears once the vendor
+      // dismisses that screen (design decision: confirmed lines stay visible).
+      applyServerPricing(sale)
       const received = Number(amountReceived)
       const change =
-        paymentMethod === 'CASH' && Number.isFinite(received) && received >= finalTotal
-          ? received - finalTotal
+        paymentMethod === 'CASH' &&
+        Number.isFinite(received) &&
+        received >= sale.totalAmount
+          ? received - sale.totalAmount
           : null
-      setSuccessData({ total: finalTotal, change })
+      const discountedLines: DiscountedLine[] = sale.items
+        .filter((it) => it.discountName)
+        .map((it) => ({
+          productName: it.productName ?? `Producto #${it.productId ?? ''}`,
+          discountName: it.discountName!,
+        }))
+      setSuccessData({ total: sale.totalAmount, change, discountedLines })
       setSuccessOpen(true)
-      clearCart()
       setAmountReceived('')
       setCustomerName('')
       setDiscountInput('')
@@ -404,7 +436,11 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
         open={successOpen}
         total={successData?.total ?? 0}
         change={successData?.change ?? null}
-        onDismiss={() => setSuccessOpen(false)}
+        discountedLines={successData?.discountedLines ?? []}
+        onDismiss={() => {
+          setSuccessOpen(false)
+          clearCart()
+        }}
       />
     </div>
   )

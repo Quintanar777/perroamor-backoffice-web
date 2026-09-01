@@ -3,6 +3,7 @@ import { Minus, Plus, Trash2 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { DiscountBadge } from '@/features/sales/components/DiscountBadge'
 import {
   itemKey,
   selectIsWholesale,
@@ -21,7 +22,10 @@ function ItemRow({ item }: { item: CartItem }) {
   const lineTotal = item.unitPrice * item.quantity
 
   const title = item.productName
-  const expectedPrice = isWholesale ? item.wholesalePrice : item.originalPrice
+  // discountedPrice is only ever set by applyServerPricing after checkout
+  // confirms it — never a live/preview value while building the cart.
+  const expectedPrice =
+    item.discountedPrice ?? (isWholesale ? item.wholesalePrice : item.originalPrice)
   const priceEdited = item.unitPrice !== expectedPrice
 
   const [priceDraft, setPriceDraft] = useState(item.unitPrice.toString())
@@ -50,6 +54,7 @@ function ItemRow({ item }: { item: CartItem }) {
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
             <p className="truncate font-medium">{title}</p>
+            {item.discountName && <DiscountBadge discountName={item.discountName} />}
           </div>
           {item.variantName && (
             <p className="text-muted-foreground text-xs">{item.variantName}</p>
