@@ -17,6 +17,9 @@ dist-ssr
 .env.*
 !.env.example
 
+# SDD agent tooling cache
+.atl
+
 # Editor directories and files
 .vscode
 .idea
