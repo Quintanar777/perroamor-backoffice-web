@@ -60,6 +60,31 @@ export interface SaleInput {
   items: SaleItemInput[]
 }
 
+export interface SaleQuoteItem {
+  productId: number | null
+  productName: string | null
+  variantId: number | null
+  variantName: string | null
+  discountId: number | null
+  discountName: string | null
+  quantity: number
+  unitPrice: number
+  personalization: string | null
+  lineTotal: number
+}
+
+export interface SaleQuote {
+  itemsTotal: number
+  discountId: number | null
+  discountName: string | null
+  items: SaleQuoteItem[]
+}
+
+export interface SaleQuoteRequest {
+  isWholesale?: boolean
+  items: SaleItemInput[]
+}
+
 export interface SaleFilters {
   page?: number
   size?: number

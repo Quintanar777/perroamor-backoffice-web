@@ -34,21 +34,19 @@ import {
   type DiscountedLine,
 } from '@/features/sales/components/SaleSuccessScreen'
 import { useCreateSale } from '@/features/sales/hooks/useCreateSale'
+import { useSaleQuote } from '@/features/sales/hooks/useSaleQuote'
+import { buildItemPayload } from '@/features/sales/lib/buildItemPayload'
 import {
   selectCartCount,
   selectCartTotal,
   selectIsWholesale,
   useCartStore,
-  type CartItem,
 } from '@/features/sales/store'
 import { useCurrentEventQuery } from '@/features/events/hooks/useEvents'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 import { formatMoney } from '@/lib/format'
 import type { CatalogLookupResult, Product } from '@/lib/types/catalog'
-import type {
-  PaymentMethod,
-  SaleItemInput,
-} from '@/lib/types/sale'
+import type { PaymentMethod, SaleQuoteItem } from '@/lib/types/sale'
 
 const norm = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -116,6 +114,24 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
   } | null>(null)
 
   const createSale = useCreateSale()
+  const saleQuote = useSaleQuote(items, isWholesale)
+
+  // Keyed the same way as the cart store's itemKey so a preview line can be
+  // matched back to its cart row. Preview data is purely advisory — checkout
+  // never reads from this map.
+  const quotePreviewByKey = useMemo(() => {
+    const map = new Map<string, SaleQuoteItem>()
+    for (const qi of saleQuote.data?.items ?? []) {
+      const key = [
+        'product',
+        qi.productId ?? '',
+        qi.variantId ?? '',
+        qi.personalization ?? '',
+      ].join(':')
+      map.set(key, qi)
+    }
+    return map
+  }, [saleQuote.data])
 
   const filteredProducts = useMemo(() => {
     const all = productsQuery.data ?? []
@@ -163,23 +179,6 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
     toast.success('Agregado al carrito', { description: product.name })
   }
 
-  const buildItemPayload = (item: CartItem): SaleItemInput => {
-    // An explicit unitPrice is a full override the backend honors verbatim.
-    // Omitting it lets the backend price the line (matching a discount, or
-    // applying the wholesale/retail rate) — only send it when the vendor
-    // manually edited the line away from what the server would compute.
-    const expectedPrice =
-      item.discountedPrice ?? (isWholesale ? item.wholesalePrice : item.originalPrice)
-    const manuallyEdited = item.unitPrice !== expectedPrice
-    return {
-      productId: item.productId,
-      variantId: item.variantId,
-      quantity: item.quantity,
-      unitPrice: manuallyEdited ? item.unitPrice : undefined,
-      personalization: item.personalization ?? undefined,
-    }
-  }
-
   const parsedDiscount = Number(discountInput)
   const discountValid =
     discountInput.trim() === '' ||
@@ -189,7 +188,12 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       ? parsedDiscount
       : 0
   const discountExceedsSubtotal = discountAmount > cartTotal
-  const finalTotal = Math.max(0, cartTotal - discountAmount)
+
+  // Automatic (combo/discount) preview from the live quote — purely advisory,
+  // never blocks or gates checkout. Stacks with the manual discount input,
+  // matching the backend's `total = itemsTotal - discountAmount + tax`.
+  const automaticDiscountAmount = cartTotal - (saleQuote.data?.itemsTotal ?? cartTotal)
+  const finalTotal = Math.max(0, cartTotal - automaticDiscountAmount - discountAmount)
 
   const insufficientCash =
     paymentMethod === 'CASH' &&
@@ -212,7 +216,7 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
         customerName: customerName.trim().length > 0 ? customerName.trim() : null,
         discountAmount: discountAmount > 0 ? discountAmount : undefined,
         isWholesale,
-        items: items.map(buildItemPayload),
+        items: items.map((item) => buildItemPayload(item, isWholesale)),
       })
       // Write server-confirmed prices/discounts back into the cart before the
       // success screen renders — the cart itself only clears once the vendor
@@ -351,7 +355,7 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
               value="items"
               className="min-h-0 flex-1 overflow-y-auto px-4 py-2"
             >
-              <CartItemsList />
+              <CartItemsList quotePreviewByKey={quotePreviewByKey} />
             </TabsContent>
 
             <TabsContent
@@ -378,6 +382,20 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
                 {formatMoney(cartTotal)}
               </span>
             </div>
+
+            {saleQuote.data?.discountName && (
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-muted-foreground flex items-center gap-1 text-sm">
+                  Descuento automático
+                  <span className="text-[10px] tracking-wide uppercase opacity-60">
+                    (estimado)
+                  </span>
+                </span>
+                <span className="text-sm font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
+                  {saleQuote.data.discountName} · -{formatMoney(automaticDiscountAmount)}
+                </span>
+              </div>
+            )}
 
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="discount" className="text-muted-foreground text-sm">

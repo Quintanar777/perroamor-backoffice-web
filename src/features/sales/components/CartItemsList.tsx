@@ -11,9 +11,16 @@ import {
   type CartItem,
 } from '@/features/sales/store'
 import { formatMoney } from '@/lib/format'
+import type { SaleQuoteItem } from '@/lib/types/sale'
 import { cn } from '@/lib/utils'
 
-function ItemRow({ item }: { item: CartItem }) {
+function ItemRow({
+  item,
+  previewMatch,
+}: {
+  item: CartItem
+  previewMatch?: SaleQuoteItem
+}) {
   const updateQty = useCartStore((s) => s.updateQty)
   const updateUnitPrice = useCartStore((s) => s.updateUnitPrice)
   const removeItem = useCartStore((s) => s.removeItem)
@@ -54,7 +61,16 @@ function ItemRow({ item }: { item: CartItem }) {
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
             <p className="truncate font-medium">{title}</p>
-            {item.discountName && <DiscountBadge discountName={item.discountName} />}
+            {item.discountName ? (
+              <DiscountBadge discountName={item.discountName} />
+            ) : (
+              previewMatch?.discountName && (
+                <DiscountBadge
+                  discountName={previewMatch.discountName}
+                  variant="preview"
+                />
+              )
+            )}
           </div>
           {item.variantName && (
             <p className="text-muted-foreground text-xs">{item.variantName}</p>
@@ -146,7 +162,12 @@ function ItemRow({ item }: { item: CartItem }) {
   )
 }
 
-export function CartItemsList() {
+export function CartItemsList({
+  quotePreviewByKey,
+}: {
+  /** Keyed the same way as itemKey(item) — live, advisory discount preview. */
+  quotePreviewByKey?: Map<string, SaleQuoteItem>
+}) {
   const items = useCartStore((s) => s.items)
 
   if (items.length === 0) {
@@ -163,7 +184,7 @@ export function CartItemsList() {
     <ul className="divide-y">
       {items.map((item) => (
         <li key={itemKey(item)}>
-          <ItemRow item={item} />
+          <ItemRow item={item} previewMatch={quotePreviewByKey?.get(itemKey(item))} />
         </li>
       ))}
       <li>
