@@ -8,12 +8,12 @@ import {
   LogOut,
   type LucideIcon,
   Menu,
-  PackagePlus,
   PanelLeftClose,
   PanelLeftOpen,
   PlusCircle,
   Receipt,
   Tag,
+  TicketPercent,
   Users,
 } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
@@ -60,11 +60,11 @@ const NAV_ITEMS: NavItemDef[] = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, end: true },
   { to: '/products', label: 'Productos', icon: Boxes },
   { to: '/brands', label: 'Marcas', icon: Tag },
-  { to: '/combos', label: 'Combos', icon: PackagePlus },
   { to: '/events', label: 'Eventos', icon: CalendarDays },
   { to: '/sales/new', label: 'Nueva Venta', icon: PlusCircle },
   { to: '/sales', label: 'Ventas', icon: Receipt, end: true },
   { to: '/reports/sales', label: 'Reportes', icon: BarChart2, managerOrAdmin: true },
+  { to: '/discounts', label: 'Descuentos', icon: TicketPercent, managerOrAdmin: true },
   { to: '/users', label: 'Usuarios', icon: Users, adminOnly: true },
 ]
 

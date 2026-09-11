@@ -28,7 +28,6 @@ export const productSchema = z.object({
   stock: intString('Stock', { min: 0 }),
   description: z.string().max(2000),
   canBePersonalized: z.boolean(),
-  hasVariants: z.boolean(),
   isActive: z.boolean().optional(),
 })
 

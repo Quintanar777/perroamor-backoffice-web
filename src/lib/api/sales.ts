@@ -4,6 +4,8 @@ import type {
   Sale,
   SaleFilters,
   SaleInput,
+  SaleQuote,
+  SaleQuoteRequest,
   SaleStats,
   SaleStatsFilters,
 } from '@/lib/types/sale'
@@ -18,6 +20,8 @@ export const salesApi = {
   cancel: (id: number): Promise<Sale> => apiPatch<Sale>(`/sales/${id}/cancel`),
   stats: (filters: SaleStatsFilters): Promise<SaleStats> =>
     apiGet<SaleStats>('/sales/stats', { query: filters as unknown as Record<string, unknown> }),
+  quote: (body: SaleQuoteRequest): Promise<SaleQuote> =>
+    apiPost<SaleQuote>('/sales/quote', body),
 }
 
 export const salesKeys = {

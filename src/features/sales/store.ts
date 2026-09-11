@@ -1,4 +1,5 @@
 import { create } from 'zustand'
+import type { Sale } from '@/lib/types/sale'
 
 export interface ProductCartItem {
   kind: 'product'
@@ -12,31 +13,20 @@ export interface ProductCartItem {
   personalization: string | null
   quantity: number
   maxStock: number
+  discountId: number | null       // written only by applyServerPricing, after checkout confirms
+  discountName: string | null     // written only by applyServerPricing, after checkout confirms
+  discountedPrice: number | null  // server-confirmed final price when a discount matched
 }
 
-export interface ComboCartItem {
-  kind: 'combo'
-  comboId: number
-  comboName: string
-  unitPrice: number
-  originalPrice: number
-  quantity: number
-  maxStock: number
-}
+export type CartItem = ProductCartItem
 
-export type CartItem = ProductCartItem | ComboCartItem
-
-export const itemKey = (item: CartItem): string => {
-  if (item.kind === 'product') {
-    return [
-      'product',
-      item.productId,
-      item.variantId ?? '',
-      item.personalization ?? '',
-    ].join(':')
-  }
-  return ['combo', item.comboId].join(':')
-}
+export const itemKey = (item: CartItem): string =>
+  [
+    'product',
+    item.productId,
+    item.variantId ?? '',
+    item.personalization ?? '',
+  ].join(':')
 
 interface CartState {
   items: CartItem[]
@@ -50,6 +40,7 @@ interface CartActions {
   removeItem: (key: string) => void
   clear: () => void
   setWholesale: (v: boolean) => void
+  applyServerPricing: (sale: Sale) => void
 }
 
 const clampQty = (qty: number, max: number): number => {
@@ -114,10 +105,29 @@ export const useCartStore = create<CartState & CartActions>((set) => ({
   setWholesale: (v) =>
     set((state) => ({
       isWholesale: v,
+      items: state.items.map((it) => ({
+        ...it,
+        unitPrice: v ? it.wholesalePrice : it.originalPrice,
+      })),
+    })),
+  applyServerPricing: (sale) =>
+    set((state) => ({
       items: state.items.map((it) => {
-        if (it.kind !== 'product') return it
-        return { ...it, unitPrice: v ? it.wholesalePrice : it.originalPrice }
-      }) as CartItem[],
+        const match = sale.items.find(
+          (si) =>
+            si.productId === it.productId &&
+            (si.variantId ?? null) === it.variantId &&
+            (si.personalization ?? null) === it.personalization,
+        )
+        if (!match) return it
+        return {
+          ...it,
+          unitPrice: match.unitPrice,
+          discountId: match.discountId,
+          discountName: match.discountName,
+          discountedPrice: match.discountId !== null ? match.unitPrice : null,
+        }
+      }),
     })),
 }))
 
@@ -135,15 +145,6 @@ export const selectQuantityForProduct =
         it.kind === 'product' && it.productId === productId
           ? acc + it.quantity
           : acc,
-      0,
-    )
-
-export const selectQuantityForCombo =
-  (comboId: number) =>
-  (state: CartState): number =>
-    state.items.reduce(
-      (acc, it) =>
-        it.kind === 'combo' && it.comboId === comboId ? acc + it.quantity : acc,
       0,
     )
 

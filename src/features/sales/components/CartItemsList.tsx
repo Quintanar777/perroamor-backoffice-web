@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react'
 import { Minus, Plus, Trash2 } from 'lucide-react'
-import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Separator } from '@/components/ui/separator'
+import { DiscountBadge } from '@/features/sales/components/DiscountBadge'
 import {
   itemKey,
   selectIsWholesale,
@@ -11,9 +11,16 @@ import {
   type CartItem,
 } from '@/features/sales/store'
 import { formatMoney } from '@/lib/format'
+import type { SaleQuoteItem } from '@/lib/types/sale'
 import { cn } from '@/lib/utils'
 
-function ItemRow({ item }: { item: CartItem }) {
+function ItemRow({
+  item,
+  previewMatch,
+}: {
+  item: CartItem
+  previewMatch?: SaleQuoteItem
+}) {
   const updateQty = useCartStore((s) => s.updateQty)
   const updateUnitPrice = useCartStore((s) => s.updateUnitPrice)
   const removeItem = useCartStore((s) => s.removeItem)
@@ -21,10 +28,11 @@ function ItemRow({ item }: { item: CartItem }) {
   const key = itemKey(item)
   const lineTotal = item.unitPrice * item.quantity
 
-  const isCombo = item.kind === 'combo'
-  const title = isCombo ? item.comboName : item.productName
+  const title = item.productName
+  // discountedPrice is only ever set by applyServerPricing after checkout
+  // confirms it — never a live/preview value while building the cart.
   const expectedPrice =
-    !isCombo && isWholesale ? item.wholesalePrice : item.originalPrice
+    item.discountedPrice ?? (isWholesale ? item.wholesalePrice : item.originalPrice)
   const priceEdited = item.unitPrice !== expectedPrice
 
   const [priceDraft, setPriceDraft] = useState(item.unitPrice.toString())
@@ -52,17 +60,22 @@ function ItemRow({ item }: { item: CartItem }) {
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
-            {isCombo && (
-              <Badge variant="secondary" className="text-[10px]">
-                Combo
-              </Badge>
-            )}
             <p className="truncate font-medium">{title}</p>
+            {item.discountName ? (
+              <DiscountBadge discountName={item.discountName} />
+            ) : (
+              previewMatch?.discountName && (
+                <DiscountBadge
+                  discountName={previewMatch.discountName}
+                  variant="preview"
+                />
+              )
+            )}
           </div>
-          {item.kind === 'product' && item.variantName && (
+          {item.variantName && (
             <p className="text-muted-foreground text-xs">{item.variantName}</p>
           )}
-          {item.kind === 'product' && item.personalization && (
+          {item.personalization && (
             <p className="text-muted-foreground line-clamp-1 text-xs italic">
               "{item.personalization}"
             </p>
@@ -149,7 +162,12 @@ function ItemRow({ item }: { item: CartItem }) {
   )
 }
 
-export function CartItemsList() {
+export function CartItemsList({
+  quotePreviewByKey,
+}: {
+  /** Keyed the same way as itemKey(item) — live, advisory discount preview. */
+  quotePreviewByKey?: Map<string, SaleQuoteItem>
+}) {
   const items = useCartStore((s) => s.items)
 
   if (items.length === 0) {
@@ -157,7 +175,7 @@ export function CartItemsList() {
       <div className="text-muted-foreground flex flex-1 flex-col items-center justify-center gap-2 py-12 text-center text-sm">
         <span className="text-3xl">🐕</span>
         <p>El carrito está vacío.</p>
-        <p className="text-xs">Toca un producto o combo para empezar.</p>
+        <p className="text-xs">Toca un producto para empezar.</p>
       </div>
     )
   }
@@ -166,7 +184,7 @@ export function CartItemsList() {
     <ul className="divide-y">
       {items.map((item) => (
         <li key={itemKey(item)}>
-          <ItemRow item={item} />
+          <ItemRow item={item} previewMatch={quotePreviewByKey?.get(itemKey(item))} />
         </li>
       ))}
       <li>

@@ -1,13 +1,20 @@
 import { useEffect } from 'react'
 import { Check } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { formatMoney } from '@/lib/format'
 import { cn } from '@/lib/utils'
+
+export interface DiscountedLine {
+  productName: string
+  discountName: string
+}
 
 interface Props {
   open: boolean
   total: number
   change: number | null
+  discountedLines?: DiscountedLine[]
   onDismiss: () => void
   autoDismissMs?: number
 }
@@ -16,6 +23,7 @@ export function SaleSuccessScreen({
   open,
   total,
   change,
+  discountedLines = [],
   onDismiss,
   autoDismissMs = 5000,
 }: Props) {
@@ -59,6 +67,27 @@ export function SaleSuccessScreen({
             <p className="text-2xl font-semibold tabular-nums">
               {formatMoney(change)}
             </p>
+          </div>
+        )}
+
+        {discountedLines.length > 0 && (
+          <div className="space-y-1.5 text-left">
+            <p className="text-muted-foreground text-center text-xs uppercase tracking-wide">
+              Descuentos aplicados
+            </p>
+            <ul className="space-y-1">
+              {discountedLines.map((line, i) => (
+                <li
+                  key={`${line.productName}-${i}`}
+                  className="flex items-center justify-between gap-2 text-sm"
+                >
+                  <span className="truncate">{line.productName}</span>
+                  <Badge variant="secondary" className="shrink-0 font-normal">
+                    {line.discountName}
+                  </Badge>
+                </li>
+              ))}
+            </ul>
           </div>
         )}
 

@@ -15,17 +15,14 @@ const DashboardPage = lazyDefault(
 const BrandsPage = lazyDefault(
   () => import('@/features/catalog/pages/BrandsPage'),
 )
-const CombosPage = lazyDefault(
-  () => import('@/features/catalog/pages/CombosPage'),
-)
 const ProductsPage = lazyDefault(
   () => import('@/features/catalog/pages/ProductsPage'),
 )
-const VariantsPage = lazyDefault(
-  () => import('@/features/catalog/pages/VariantsPage'),
-)
 const PrintableCatalogPage = lazyDefault(
   () => import('@/features/catalog/pages/PrintableCatalogPage'),
+)
+const DiscountsPage = lazyDefault(
+  () => import('@/features/discounts/pages/DiscountsPage'),
 )
 const EventsPage = lazyDefault(
   () => import('@/features/events/pages/EventsPage'),
@@ -61,15 +58,10 @@ export const router = createBrowserRouter([
           { index: true, element: withSuspense(<DashboardPage />) },
           { path: 'products', element: withSuspense(<ProductsPage />) },
           {
-            path: 'products/:id/variants',
-            element: withSuspense(<VariantsPage />),
-          },
-          {
             path: 'products/labels',
             element: withSuspense(<PrintableCatalogPage />),
           },
           { path: 'brands', element: withSuspense(<BrandsPage />) },
-          { path: 'combos', element: withSuspense(<CombosPage />) },
           { path: 'events', element: withSuspense(<EventsPage />) },
           { path: 'sales', element: withSuspense(<SalesPage />) },
           { path: 'sales/new', element: withSuspense(<NewSalePage />) },
@@ -81,6 +73,7 @@ export const router = createBrowserRouter([
                 path: 'reports/sales',
                 element: withSuspense(<SalesReportPage />),
               },
+              { path: 'discounts', element: withSuspense(<DiscountsPage />) },
             ],
           },
           {

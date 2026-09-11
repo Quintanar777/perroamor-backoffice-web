@@ -52,7 +52,7 @@ export default function PrintableCatalogPage() {
       .sort((a, b) => b.totalQuantity - a.totalQuantity)
       .slice(0, topN)
       .map((r) => productById.get(r.productId))
-      .filter((p): p is Product => !!p?.code)
+      .filter((p): p is Product => !!p?.code && p.isActive)
   }, [reportQuery.data, productById, topN])
 
   const fullCatalog = useMemo(

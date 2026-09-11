@@ -2,7 +2,6 @@ import { useEffect, useState } from 'react'
 import {
   Barcode as BarcodeIcon,
   Check,
-  Layers,
   Pencil,
   Plus,
   Printer,
@@ -21,6 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
+import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group'
 import { BrandBadge } from '@/components/shared/BrandBadge'
 import { ConfirmDialog } from '@/components/shared/ConfirmDialog'
 import { DataTable, type DataTableColumn } from '@/components/shared/DataTable'
@@ -38,13 +38,14 @@ import {
   useProductsQuery,
   useUpdateProduct,
 } from '@/features/catalog/hooks/useProducts'
-import { formatMoney } from '@/lib/format'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 import { ApiError, NetworkError } from '@/lib/types/api'
 import type { Product } from '@/lib/types/catalog'
 
 const PAGE_SIZE = 10
 const ALL = '__all__'
+
+type ActiveFilter = 'all' | 'active' | 'inactive'
 
 type RowEdit = {
   price?: number
@@ -57,15 +58,21 @@ export default function ProductsPage() {
   const [brandId, setBrandId] = useState<string>(ALL)
   const [category, setCategory] = useState<string>(ALL)
   const [searchInput, setSearchInput] = useState('')
+  const [activeFilter, setActiveFilter] = useState<ActiveFilter>('active')
   const search = useDebouncedValue(searchInput, 300)
 
   const filters = {
     page,
     size: PAGE_SIZE,
-    isActive: true,
     brandId: brandId === ALL ? undefined : Number(brandId),
     category: category === ALL ? undefined : category,
     q: search.trim().length > 0 ? search.trim() : undefined,
+    isActive:
+      activeFilter === 'all'
+        ? undefined
+        : activeFilter === 'active'
+          ? true
+          : false,
   }
 
   const productsQuery = useProductsQuery(filters)
@@ -88,7 +95,7 @@ export default function ProductsPage() {
   // Discard all inline edits when filters or page change
   useEffect(() => {
     setEdits(new Map())
-  }, [brandId, category, search, page])
+  }, [brandId, category, search, activeFilter, page])
 
   const formOpen = creating || editing !== null
   const closeForm = () => {
@@ -152,7 +159,6 @@ export default function ProductsPage() {
                 wholesalePrice: e.wholesalePrice ?? p.wholesalePrice,
                 stock: p.stock,
                 canBePersonalized: p.canBePersonalized,
-                hasVariants: p.hasVariants,
                 isActive: p.isActive,
               },
             })
@@ -226,6 +232,17 @@ export default function ProductsPage() {
       ),
     },
     {
+      key: 'size',
+      header: 'Talla',
+      headerClassName: 'w-20',
+      cell: (p) =>
+        p.size ? (
+          <span className="text-sm">{p.size}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
       key: 'brand',
       header: 'Marca',
       headerClassName: 'w-32',
@@ -236,75 +253,60 @@ export default function ProductsPage() {
       header: <span className="block text-right">Precio</span>,
       headerClassName: 'w-28 text-right',
       className: 'text-right',
-      cell: (p) =>
-        p.hasVariants ? (
-          <span className="text-muted-foreground tabular-nums text-sm">
-            {formatMoney(p.price)}{' '}
-            <span className="text-xs">base</span>
-          </span>
-        ) : (
-          <Input
-            type="number"
-            min={0}
-            step={0.01}
-            value={getVal(p, 'price')}
-            onChange={(e) => {
-              const n = e.target.valueAsNumber
-              if (!isNaN(n)) setField(p.id, { price: n })
-            }}
-            onKeyDown={handleKeyDown(p)}
-            className="h-7 w-full text-right tabular-nums"
-          />
-        ),
+      cell: (p) => (
+        <Input
+          type="number"
+          min={0}
+          step={0.01}
+          value={getVal(p, 'price')}
+          onChange={(e) => {
+            const n = e.target.valueAsNumber
+            if (!isNaN(n)) setField(p.id, { price: n })
+          }}
+          onKeyDown={handleKeyDown(p)}
+          className="h-7 w-full text-right tabular-nums"
+        />
+      ),
     },
     {
       key: 'wholesalePrice',
       header: <span className="block text-right">Mayoreo</span>,
       headerClassName: 'w-28 text-right',
       className: 'text-right',
-      cell: (p) =>
-        p.hasVariants ? (
-          <span className="text-muted-foreground tabular-nums text-sm">
-            {formatMoney(p.wholesalePrice)}{' '}
-            <span className="text-xs">base</span>
-          </span>
-        ) : (
-          <Input
-            type="number"
-            min={0}
-            step={0.01}
-            value={getVal(p, 'wholesalePrice')}
-            onChange={(e) => {
-              const n = e.target.valueAsNumber
-              if (!isNaN(n)) setField(p.id, { wholesalePrice: n })
-            }}
-            onKeyDown={handleKeyDown(p)}
-            className="h-7 w-full text-right tabular-nums"
-          />
-        ),
+      cell: (p) => (
+        <Input
+          type="number"
+          min={0}
+          step={0.01}
+          value={getVal(p, 'wholesalePrice')}
+          onChange={(e) => {
+            const n = e.target.valueAsNumber
+            if (!isNaN(n)) setField(p.id, { wholesalePrice: n })
+          }}
+          onKeyDown={handleKeyDown(p)}
+          className="h-7 w-full text-right tabular-nums"
+        />
+      ),
     },
     {
       key: 'stock',
       header: <span className="block text-right">Stock</span>,
       headerClassName: 'w-24 text-right',
       className: 'text-right',
-      cell: (p) =>
-        p.hasVariants ? (
-          <span className="tabular-nums">{p.stock}</span>
-        ) : (
-          <Input
-            type="number"
-            min={0}
-            step={1}
-            value={getVal(p, 'stock')}
-            onChange={(e) => {
-              const n = e.target.valueAsNumber
-              if (!isNaN(n)) setField(p.id, { stock: Math.round(n) })
-            }}
-            onKeyDown={handleKeyDown(p)}
-            className="h-7 w-full text-right tabular-nums"
-          />
-        ),
+      cell: (p) => (
+        <Input
+          type="number"
+          min={0}
+          step={1}
+          value={getVal(p, 'stock')}
+          onChange={(e) => {
+            const n = e.target.valueAsNumber
+            if (!isNaN(n)) setField(p.id, { stock: Math.round(n) })
+          }}
+          onKeyDown={handleKeyDown(p)}
+          className="h-7 w-full text-right tabular-nums"
+        />
+      ),
     },
     {
       key: 'actions',
@@ -338,18 +340,6 @@ export default function ProductsPage() {
                   <X className="size-4" />
                 </Button>
               </>
-            )}
-            {p.hasVariants && (
-              <Button
-                variant="ghost"
-                size="icon"
-                asChild
-                aria-label={`Variantes de ${p.name}`}
-              >
-                <Link to={`/products/${p.id}/variants`}>
-                  <Layers className="size-4" />
-                </Link>
-              </Button>
             )}
             <Button
               variant="ghost"
@@ -424,7 +414,7 @@ export default function ProductsPage() {
         }
       />
 
-      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)]">
+      <div className="grid gap-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,2fr)_auto]">
         <Select
           value={brandId}
           onValueChange={(v) => setBrandId(v)}
@@ -468,6 +458,21 @@ export default function ProductsPage() {
             className="pl-9"
           />
         </div>
+
+        <ToggleGroup
+          type="single"
+          value={activeFilter}
+          onValueChange={(v) => {
+            if (!v) return
+            setActiveFilter(v as ActiveFilter)
+            setPage(0)
+          }}
+          variant="outline"
+        >
+          <ToggleGroupItem value="active">Activos</ToggleGroupItem>
+          <ToggleGroupItem value="inactive">Inactivos</ToggleGroupItem>
+          <ToggleGroupItem value="all">Todos</ToggleGroupItem>
+        </ToggleGroup>
       </div>
 
       {showEmpty ? (
@@ -515,7 +520,7 @@ export default function ProductsPage() {
         open={deleting !== null}
         onOpenChange={(open) => !open && setDeleting(null)}
         title={`Eliminar "${deleting?.name ?? ''}"?`}
-        description="El producto y sus variantes dejarán de estar disponibles. Esta acción no se puede deshacer."
+        description="El producto dejará de estar disponible. Esta acción no se puede deshacer."
         confirmLabel="Eliminar"
         destructive
         loading={deleteProduct.isPending}

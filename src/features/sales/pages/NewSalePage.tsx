@@ -16,14 +16,11 @@ import {
 import { Skeleton } from '@/components/ui/skeleton'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { useBrandsQuery } from '@/features/catalog/hooks/useBrands'
-import { useAllCombosQuery } from '@/features/catalog/hooks/useCombos'
 import { useAllProductsQuery } from '@/features/catalog/hooks/useProducts'
 import {
   CatalogToolbar,
   ALL_BRANDS,
-  type CatalogTab,
 } from '@/features/sales/components/CatalogToolbar'
-import { ComboCard } from '@/features/sales/components/ComboCard'
 import { CartItemsList } from '@/features/sales/components/CartItemsList'
 import { EventBanner } from '@/features/sales/components/EventBanner'
 import { NoEventBlocker } from '@/features/sales/components/NoEventBlocker'
@@ -32,23 +29,24 @@ import { ProductCard } from '@/features/sales/components/ProductCard'
 import { ProductConfigSheet } from '@/features/sales/components/ProductConfigSheet'
 import { ScanInput } from '@/features/sales/components/ScanInput'
 import { SalesBottomBar } from '@/features/sales/components/SalesBottomBar'
-import { SaleSuccessScreen } from '@/features/sales/components/SaleSuccessScreen'
+import {
+  SaleSuccessScreen,
+  type DiscountedLine,
+} from '@/features/sales/components/SaleSuccessScreen'
 import { useCreateSale } from '@/features/sales/hooks/useCreateSale'
+import { useSaleQuote } from '@/features/sales/hooks/useSaleQuote'
+import { buildItemPayload } from '@/features/sales/lib/buildItemPayload'
 import {
   selectCartCount,
   selectCartTotal,
   selectIsWholesale,
   useCartStore,
-  type CartItem,
 } from '@/features/sales/store'
 import { useCurrentEventQuery } from '@/features/events/hooks/useEvents'
 import { useDebouncedValue } from '@/lib/hooks/useDebouncedValue'
 import { formatMoney } from '@/lib/format'
-import type { CatalogLookupResult, Combo, Product } from '@/lib/types/catalog'
-import type {
-  PaymentMethod,
-  SaleItemInput,
-} from '@/lib/types/sale'
+import type { CatalogLookupResult, Product } from '@/lib/types/catalog'
+import type { PaymentMethod, SaleQuoteItem } from '@/lib/types/sale'
 
 const norm = (s: string) =>
   s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '')
@@ -72,14 +70,12 @@ export default function NewSalePage() {
 }
 
 function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventStatus: string; eventLocation: string }) {
-  const [tab, setTab] = useState<CatalogTab>('products')
   const [brandId, setBrandId] = useState<string>(ALL_BRANDS)
   const [searchInput, setSearchInput] = useState('')
   const search = useDebouncedValue(searchInput, 300)
 
   const brandsQuery = useBrandsQuery()
   const productsQuery = useAllProductsQuery()
-  const combosQuery = useAllCombosQuery()
   const currentEventQuery = useCurrentEventQuery()
 
   const [configProduct, setConfigProduct] = useState<Product | null>(null)
@@ -93,6 +89,7 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
   const clearCart = useCartStore((s) => s.clear)
   const addItem = useCartStore((s) => s.addItem)
   const setWholesale = useCartStore((s) => s.setWholesale)
+  const applyServerPricing = useCartStore((s) => s.applyServerPricing)
 
   const productQuantities = useMemo(() => {
     const map = new Map<number, number>()
@@ -104,25 +101,37 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
     return map
   }, [items])
 
-  const comboQuantities = useMemo(() => {
-    const map = new Map<number, number>()
-    for (const it of items) {
-      if (it.kind === 'combo') {
-        map.set(it.comboId, (map.get(it.comboId) ?? 0) + it.quantity)
-      }
-    }
-    return map
-  }, [items])
-
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('CASH')
   const [amountReceived, setAmountReceived] = useState('')
   const [customerName, setCustomerName] = useState('')
   const [discountInput, setDiscountInput] = useState('')
 
   const [successOpen, setSuccessOpen] = useState(false)
-  const [successData, setSuccessData] = useState<{ total: number; change: number | null } | null>(null)
+  const [successData, setSuccessData] = useState<{
+    total: number
+    change: number | null
+    discountedLines: DiscountedLine[]
+  } | null>(null)
 
   const createSale = useCreateSale()
+  const saleQuote = useSaleQuote(items, isWholesale)
+
+  // Keyed the same way as the cart store's itemKey so a preview line can be
+  // matched back to its cart row. Preview data is purely advisory — checkout
+  // never reads from this map.
+  const quotePreviewByKey = useMemo(() => {
+    const map = new Map<string, SaleQuoteItem>()
+    for (const qi of saleQuote.data?.items ?? []) {
+      const key = [
+        'product',
+        qi.productId ?? '',
+        qi.variantId ?? '',
+        qi.personalization ?? '',
+      ].join(':')
+      map.set(key, qi)
+    }
+    return map
+  }, [saleQuote.data])
 
   const filteredProducts = useMemo(() => {
     const all = productsQuery.data ?? []
@@ -132,15 +141,6 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       .filter((p) => brandId === ALL_BRANDS || p.brandId === Number(brandId))
       .filter((p) => q.length === 0 || norm(p.name).includes(q))
   }, [productsQuery.data, brandId, search])
-
-  const filteredCombos = useMemo(() => {
-    const all = combosQuery.data ?? []
-    const q = norm(search.trim())
-    return all
-      .filter((c) => c.isActive)
-      .filter((c) => brandId === ALL_BRANDS || c.brandId === Number(brandId))
-      .filter((c) => q.length === 0 || norm(c.name).includes(q))
-  }, [combosQuery.data, brandId, search])
 
   const handleProductSelect = (product: Product) => {
     addItem({
@@ -155,6 +155,9 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       personalization: null,
       quantity: 1,
       maxStock: product.stock,
+      discountId: null,
+      discountName: null,
+      discountedPrice: null,
     })
   }
 
@@ -163,37 +166,8 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
   }
 
   const handleScanResolved = (result: CatalogLookupResult) => {
-    if (result.matchType === 'VARIANT' && result.variant) {
-      const { product, variant } = result
-      if (variant.stock <= 0) {
-        toast.error('Sin stock', {
-          description: `${product.name} · ${variant.variantName}`,
-        })
-        return
-      }
-      const retailPrice = product.price + variant.priceAdjustment
-      const wholesalePriceEff = product.wholesalePrice + variant.priceAdjustment
-      addItem({
-        kind: 'product',
-        productId: product.id,
-        variantId: variant.id,
-        productName: product.name,
-        variantName: variant.variantName,
-        unitPrice: isWholesale ? wholesalePriceEff : retailPrice,
-        originalPrice: retailPrice,
-        wholesalePrice: wholesalePriceEff,
-        personalization: null,
-        quantity: 1,
-        maxStock: variant.stock,
-      })
-      toast.success('Agregado al carrito', {
-        description: `${product.name} · ${variant.variantName}`,
-      })
-      return
-    }
-
     const { product } = result
-    if (product.hasVariants || product.canBePersonalized) {
+    if (product.canBePersonalized) {
       setConfigProduct(product)
       return
     }
@@ -205,35 +179,6 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
     toast.success('Agregado al carrito', { description: product.name })
   }
 
-  const handleComboSelect = (combo: Combo) => {
-    addItem({
-      kind: 'combo',
-      comboId: combo.id,
-      comboName: combo.name,
-      unitPrice: combo.price,
-      originalPrice: combo.price,
-      quantity: 1,
-      maxStock: combo.availableStock,
-    })
-  }
-
-  const buildItemPayload = (item: CartItem): SaleItemInput => {
-    if (item.kind === 'product') {
-      return {
-        productId: item.productId,
-        variantId: item.variantId,
-        quantity: item.quantity,
-        unitPrice: item.unitPrice,
-        personalization: item.personalization ?? undefined,
-      }
-    }
-    return {
-      comboId: item.comboId,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-    }
-  }
-
   const parsedDiscount = Number(discountInput)
   const discountValid =
     discountInput.trim() === '' ||
@@ -243,7 +188,12 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       ? parsedDiscount
       : 0
   const discountExceedsSubtotal = discountAmount > cartTotal
-  const finalTotal = Math.max(0, cartTotal - discountAmount)
+
+  // Automatic (combo/discount) preview from the live quote — purely advisory,
+  // never blocks or gates checkout. Stacks with the manual discount input,
+  // matching the backend's `total = itemsTotal - discountAmount + tax`.
+  const automaticDiscountAmount = cartTotal - (saleQuote.data?.itemsTotal ?? cartTotal)
+  const finalTotal = Math.max(0, cartTotal - automaticDiscountAmount - discountAmount)
 
   const insufficientCash =
     paymentMethod === 'CASH' &&
@@ -260,21 +210,33 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
   const handleCheckout = async () => {
     if (!canCheckout) return
     try {
-      await createSale.mutateAsync({
+      const sale = await createSale.mutateAsync({
         eventId,
         paymentMethod,
         customerName: customerName.trim().length > 0 ? customerName.trim() : null,
         discountAmount: discountAmount > 0 ? discountAmount : undefined,
-        items: items.map(buildItemPayload),
+        isWholesale,
+        items: items.map((item) => buildItemPayload(item, isWholesale)),
       })
+      // Write server-confirmed prices/discounts back into the cart before the
+      // success screen renders — the cart itself only clears once the vendor
+      // dismisses that screen (design decision: confirmed lines stay visible).
+      applyServerPricing(sale)
       const received = Number(amountReceived)
       const change =
-        paymentMethod === 'CASH' && Number.isFinite(received) && received >= finalTotal
-          ? received - finalTotal
+        paymentMethod === 'CASH' &&
+        Number.isFinite(received) &&
+        received >= sale.totalAmount
+          ? received - sale.totalAmount
           : null
-      setSuccessData({ total: finalTotal, change })
+      const discountedLines: DiscountedLine[] = sale.items
+        .filter((it) => it.discountName)
+        .map((it) => ({
+          productName: it.productName ?? `Producto #${it.productId ?? ''}`,
+          discountName: it.discountName!,
+        }))
+      setSuccessData({ total: sale.totalAmount, change, discountedLines })
       setSuccessOpen(true)
-      clearCart()
       setAmountReceived('')
       setCustomerName('')
       setDiscountInput('')
@@ -294,8 +256,6 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
       <ScanInput onResolved={handleScanResolved} />
 
       <CatalogToolbar
-        tab={tab}
-        onTabChange={setTab}
         brandId={brandId}
         onBrandChange={setBrandId}
         search={searchInput}
@@ -303,36 +263,19 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
         brands={brandsQuery.data ?? []}
       />
 
-      {tab === 'products' ? (
-        productsQuery.isLoading ? (
-          <CatalogSkeleton />
-        ) : filteredProducts.length === 0 ? (
-          <EmptyResults />
-        ) : (
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4">
-            {filteredProducts.map((p) => (
-              <ProductCard
-                key={p.id}
-                product={p}
-                quantityInCart={productQuantities.get(p.id) ?? 0}
-                onSelect={handleProductSelect}
-                onConfigure={handleProductConfigure}
-              />
-            ))}
-          </div>
-        )
-      ) : combosQuery.isLoading ? (
+      {productsQuery.isLoading ? (
         <CatalogSkeleton />
-      ) : filteredCombos.length === 0 ? (
+      ) : filteredProducts.length === 0 ? (
         <EmptyResults />
       ) : (
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-3 lg:grid-cols-4">
-          {filteredCombos.map((c) => (
-            <ComboCard
-              key={c.id}
-              combo={c}
-              quantityInCart={comboQuantities.get(c.id) ?? 0}
-              onSelect={handleComboSelect}
+          {filteredProducts.map((p) => (
+            <ProductCard
+              key={p.id}
+              product={p}
+              quantityInCart={productQuantities.get(p.id) ?? 0}
+              onSelect={handleProductSelect}
+              onConfigure={handleProductConfigure}
             />
           ))}
         </div>
@@ -412,7 +355,7 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
               value="items"
               className="min-h-0 flex-1 overflow-y-auto px-4 py-2"
             >
-              <CartItemsList />
+              <CartItemsList quotePreviewByKey={quotePreviewByKey} />
             </TabsContent>
 
             <TabsContent
@@ -439,6 +382,20 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
                 {formatMoney(cartTotal)}
               </span>
             </div>
+
+            {saleQuote.data?.discountName && (
+              <div className="flex items-baseline justify-between gap-2">
+                <span className="text-muted-foreground flex items-center gap-1 text-sm">
+                  Descuento automático
+                  <span className="text-[10px] tracking-wide uppercase opacity-60">
+                    (estimado)
+                  </span>
+                </span>
+                <span className="text-sm font-medium tabular-nums text-emerald-600 dark:text-emerald-400">
+                  {saleQuote.data.discountName} · -{formatMoney(automaticDiscountAmount)}
+                </span>
+              </div>
+            )}
 
             <div className="flex items-center justify-between gap-2">
               <Label htmlFor="discount" className="text-muted-foreground text-sm">
@@ -497,7 +454,11 @@ function NewSaleInner({ eventId }: { eventId: number; eventName: string; eventSt
         open={successOpen}
         total={successData?.total ?? 0}
         change={successData?.change ?? null}
-        onDismiss={() => setSuccessOpen(false)}
+        discountedLines={successData?.discountedLines ?? []}
+        onDismiss={() => {
+          setSuccessOpen(false)
+          clearCart()
+        }}
       />
     </div>
   )
