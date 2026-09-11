@@ -22,7 +22,7 @@ interface Props {
 export function ProductLabelDialog({ product, onClose }: Props) {
   return (
     <Dialog open={product !== null} onOpenChange={(v) => !v && onClose()}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className="sm:max-w-lg">
         {product && <LabelBody key={product.id} product={product} />}
       </DialogContent>
     </Dialog>
@@ -38,11 +38,16 @@ function LabelBody({ product }: { product: Product }) {
   const drawBarcode = (node: HTMLCanvasElement | null) => {
     canvasRef.current = node
     if (!node || !code) return
+    // Códigos largos (NOMBRE-TALLA de productos con nombre largo, ej.
+    // "COLLAR-MARTINGALE-BASICO") generan más barras — se reduce el ancho de
+    // barra y el tamaño de fuente para que quepan en el diálogo sin desbordar.
+    const barWidth = code.length > 20 ? 1.6 : code.length > 14 ? 1.9 : 2.2
+    const fontSize = code.length > 20 ? 13 : code.length > 14 ? 14 : 16
     JsBarcode(node, code, {
       format: 'CODE128',
       height: 60,
-      width: 2.2,
-      fontSize: 16,
+      width: barWidth,
+      fontSize,
       margin: 8,
       displayValue: true,
     })
@@ -75,9 +80,9 @@ function LabelBody({ product }: { product: Product }) {
         </DialogDescription>
       </DialogHeader>
 
-      <div className="flex justify-center rounded-lg border p-6">
+      <div className="flex justify-center overflow-x-auto rounded-lg border p-6">
         {code ? (
-          <canvas ref={drawBarcode} />
+          <canvas ref={drawBarcode} className="max-w-full" />
         ) : (
           <p className="text-muted-foreground text-sm">
             Este producto todavía no tiene código.
