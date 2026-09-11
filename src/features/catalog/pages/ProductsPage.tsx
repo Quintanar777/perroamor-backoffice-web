@@ -232,6 +232,17 @@ export default function ProductsPage() {
       ),
     },
     {
+      key: 'size',
+      header: 'Talla',
+      headerClassName: 'w-20',
+      cell: (p) =>
+        p.size ? (
+          <span className="text-sm">{p.size}</span>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        ),
+    },
+    {
       key: 'brand',
       header: 'Marca',
       headerClassName: 'w-32',

@@ -17,6 +17,7 @@ export interface BrandInput {
 export interface Product {
   id: number
   name: string
+  size: string | null
   code: string | null
   brandId: number
   brandName: string

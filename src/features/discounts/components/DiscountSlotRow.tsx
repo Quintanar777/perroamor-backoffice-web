@@ -57,7 +57,7 @@ export function DiscountSlotRow({
               <SelectContent>
                 {products.map((p) => (
                   <SelectItem key={p.id} value={String(p.id)}>
-                    {p.name}
+                    {p.size ? `${p.name} - ${p.size}` : p.name}
                   </SelectItem>
                 ))}
               </SelectContent>
