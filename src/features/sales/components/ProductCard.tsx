@@ -79,7 +79,7 @@ export function ProductCard({
 
       <div className="flex flex-col gap-1">
         <p className="line-clamp-2 text-center text-xl leading-tight font-semibold">
-          {product.name}
+          {product.size ? `${product.name} - ${product.size}` : product.name}
         </p>
         <p className="text-muted-foreground text-center text-xs">
           {product.category}

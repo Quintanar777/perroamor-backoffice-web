@@ -29,6 +29,7 @@ function ItemRow({
   const lineTotal = item.unitPrice * item.quantity
 
   const title = item.productName
+  const displayTitle = item.size ? `${title} - ${item.size}` : title
   // discountedPrice is only ever set by applyServerPricing after checkout
   // confirms it — never a live/preview value while building the cart.
   const expectedPrice =
@@ -60,7 +61,7 @@ function ItemRow({
       <div className="flex items-start justify-between gap-2">
         <div className="min-w-0 flex-1 space-y-1">
           <div className="flex items-center gap-2">
-            <p className="truncate font-medium">{title}</p>
+            <p className="truncate font-medium">{displayTitle}</p>
             {item.discountName ? (
               <DiscountBadge discountName={item.discountName} />
             ) : (

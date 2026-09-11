@@ -66,6 +66,7 @@ function ConfigBody({
     productId: product.id,
     variantId: null,
     productName: product.name,
+    size: product.size,
     variantName: null,
     unitPrice: isWholesale ? product.wholesalePrice : product.price,
     originalPrice: product.price,

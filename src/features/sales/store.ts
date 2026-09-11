@@ -6,6 +6,7 @@ export interface ProductCartItem {
   productId: number
   variantId: number | null
   productName: string
+  size: string | null
   variantName: string | null
   unitPrice: number
   originalPrice: number   // retail effective price — never changes
